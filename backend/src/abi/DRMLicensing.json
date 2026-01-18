@@ -1,0 +1,6 @@
+[
+    "function purchaseLicense(uint256 tokenId, string memory licenseType) public payable",
+    "function checkLicense(address user, uint256 tokenId) public view returns (bool)",
+    "function setLicenseTerms(uint256 tokenId, uint256 _watchPrice, uint256 _rentPrice, uint256 _commercialPrice) public",
+    "event LicensePurchased(uint256 indexed tokenId, address indexed buyer, string licenseType, uint256 price)"
+]

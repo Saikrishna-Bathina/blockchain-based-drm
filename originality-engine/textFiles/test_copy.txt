@@ -1,0 +1,3 @@
+The fast brown fox leaps over the sleeping dog.
+Original content for testing text originality engine.
+This file includes modified sentences to test semantic similarity detection.

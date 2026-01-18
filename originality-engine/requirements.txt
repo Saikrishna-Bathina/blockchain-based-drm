@@ -1,0 +1,10 @@
+imagehash
+Pillow
+datasketch
+pypdf
+python-docx
+numpy
+sentence-transformers
+scikit-learn
+flask
+flask-cors
