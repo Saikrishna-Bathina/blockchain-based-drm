@@ -150,6 +150,9 @@ To interact with the local blockchain, you must configure MetaMask:
 
 ## ⚠️ Troubleshooting
 
+*   **Error: "Unexpected token" / "is not valid JSON" (Backend)**:
+    *   This happens if the frontend sends a raw string instead of a JSON object.
+    *   **Fix**: Hard Refresh the browser (`Ctrl+F5`) to ensure the latest `Register.jsx` code (`{ username, ... }`) is loaded.
 *   **Error: "Nonce too high" in MetaMask**:
     *   Go to MetaMask Settings > Advanced > Clear activity tab data. This resets your transaction history for the local network.
 *   **Error: "Connection Refused" (Backend)**:

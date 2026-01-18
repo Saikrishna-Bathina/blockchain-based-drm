@@ -13,7 +13,8 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await register(username, email, password);
+            console.log("DEBUG: Register Component calling register with:", { username, email, password });
+            await register({ username, email, password });
             navigate('/dashboard');
         } catch (err) {
              setError(err.response?.data?.error || 'Registration failed');

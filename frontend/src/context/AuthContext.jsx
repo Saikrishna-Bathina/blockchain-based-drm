@@ -63,8 +63,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const checkWalletConnection = async () => {
-      if (window.ethereum && window.ethereum.selectedAddress) {
-          setProvider(window.ethereum);
+      if (window.ethereum) {
+          try {
+              const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+              if (accounts.length > 0) {
+                  setProvider(window.ethereum);
+              }
+          } catch (err) {
+              console.error("Failed to check wallet connection:", err);
+          }
       }
   };
 
@@ -106,6 +113,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
+    console.log("DEBUG: AuthContext register called with:", userData);
     try {
       const { data } = await api.post('/auth/register', userData);
       localStorage.setItem('token', data.token);
@@ -139,7 +147,7 @@ export const AuthProvider = ({ children }) => {
       // 1. Request Accounts
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       const walletAddress = accounts[0];
-      setProvider(window.ethereum);
+      setProvider(window.ethereum); // Ensure provider is set immediately
 
       // 2. Check Network & Switch if needed
       const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });

@@ -129,7 +129,10 @@ exports.secureAsset = async (req, res, next) => {
             const cid = await uploadToIPFS(encryptedPath);
             asset.cid = cid;
 
-            if (fs.existsSync(encryptedPath)) fs.unlinkSync(encryptedPath);
+            if (fs.existsSync(encryptedPath)) {
+                // fs.unlinkSync(encryptedPath); // KEEP FILE FOR STREAMING
+                console.log("Kept encrypted file for streaming:", encryptedPath);
+            }
         } catch (err) {
             if (fs.existsSync(encryptedPath)) fs.unlinkSync(encryptedPath);
             return res.status(500).json({ success: false, error: "Encryption/IPFS Failed: " + err.message });

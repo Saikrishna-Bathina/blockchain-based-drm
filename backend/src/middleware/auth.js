@@ -10,6 +10,10 @@ exports.protect = async (req, res, next) => {
     ) {
         // Set token from Bearer token in header
         token = req.headers.authorization.split(' ')[1];
+    } else if (req.query.token) {
+        // Set token from query parameter (for streaming)
+        token = req.query.token;
+        console.log("Stream Token Extracted:", token ? "YES" : "NO");
     }
 
     // Make sure token exists

@@ -19,13 +19,18 @@ exports.streamAsset = async (req, res, next) => {
             return res.status(404).json({ success: false, error: 'Asset not found' });
         }
 
-        // 1. Verify User License on Blockchain
-        if (!req.user || !req.user.walletAddress) {
-            return res.status(401).json({ success: false, error: 'User wallet not connected' });
-        }
-
         // Skip check if owner
         if (asset.owner.toString() !== req.user.id) {
+            // 1. Verify User License on Blockchain
+            if (!req.user || !req.user.walletAddress) {
+                console.error("Stream 401 Debug:", {
+                    userExists: !!req.user,
+                    walletAddress: req.user?.walletAddress,
+                    userId: req.user?._id
+                });
+                return res.status(401).json({ success: false, error: 'User wallet not connected' });
+            }
+
             try {
                 const provider = new ethers.JsonRpcProvider(RPC_URL);
                 const contract = new ethers.Contract(DRM_LICENSING_ADDRESS, DRMLicensingABI, provider);
@@ -136,6 +141,8 @@ exports.streamAsset = async (req, res, next) => {
                     'Accept-Ranges': 'bytes',
                     'Content-Length': chunksize,
                     'Content-Type': asset.contentType === 'video' ? 'video/mp4' : (asset.contentType === 'audio' ? 'audio/mpeg' : 'application/octet-stream'),
+                    'Cross-Origin-Resource-Policy': 'cross-origin', // Allow embedding
+                    'Access-Control-Allow-Origin': '*'
                 };
                 res.writeHead(206, head);
                 file.pipe(res);
@@ -143,6 +150,8 @@ exports.streamAsset = async (req, res, next) => {
                 const head = {
                     'Content-Length': fileSize,
                     'Content-Type': asset.contentType === 'video' ? 'video/mp4' : (asset.contentType === 'audio' ? 'audio/mpeg' : 'application/octet-stream'),
+                    'Cross-Origin-Resource-Policy': 'cross-origin', // Allow embedding
+                    'Access-Control-Allow-Origin': '*'
                 };
                 res.writeHead(200, head);
                 fs.createReadStream(decryptedPath).pipe(res);

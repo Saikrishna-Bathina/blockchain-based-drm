@@ -9,14 +9,19 @@ const assetRoutes = require('./routes/asset');
 
 const app = express();
 
+// Enable CORS first
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
+
 // Body parser
 app.use(express.json());
 
-// Enable CORS
-app.use(cors());
-
 // Set security headers
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
 // Logger
 if (process.env.NODE_ENV === 'development') {

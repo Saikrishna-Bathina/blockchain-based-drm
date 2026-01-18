@@ -26,7 +26,7 @@ const SignupPage = () => {
         return
     }
     try {
-      await register(username, email, password)
+      await register({ username, email, password })
       navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed")
