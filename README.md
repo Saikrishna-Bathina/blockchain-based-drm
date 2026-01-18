@@ -11,8 +11,10 @@ Before running the project, ensure you have the following installed on your syst
 1.  **Node.js (v18+)**: [Download Here](https://nodejs.org/)
 2.  **started MongoDB (Locally or Atlas)**: [Download Community Server](https://www.mongodb.com/try/download/community)
 3.  **Python (v3.10+)**: [Download Here](https://www.python.org/)
-4.  **MetaMask Extension**: Installed in your browser (Chrome/Edge/Brave).
-5.  **Git**: [Download Here](https://git-scm.com/)
+4.  **Go (v1.19+)**: [Download Here](https://go.dev/dl/) (Required for Audio Analysis)
+5.  **FFmpeg**: [Download Here](https://ffmpeg.org/download.html) (Required for Audio/Video processing) -> **Ensure it is added to your System PATH.**
+6.  **MetaMask Extension**: Installed in your browser (Chrome/Edge/Brave).
+7.  **Git**: [Download Here](https://git-scm.com/)
 
 ---
 
@@ -61,13 +63,18 @@ Follow these steps **in order** to set up the project on a fresh system.
     python -m venv venv
     .\venv\Scripts\activate
     ```
-3.  Install Dependencies:
+3.  **Install Python Dependencies**:
     ```bash
     pip install -r requirements.txt
     ```
     *(Note: This includes `torch`, `sentence-transformers`, `flask`, `numpy`, etc. It may take a few minutes).*
 
-4.  Start the AI Servers:**
+4.  **Verify Go & FFmpeg**:
+    *   Open terminal and run `go version` -> Should show Go 1.19+.
+    *   Run `ffmpeg -version` -> Should show FFmpeg details.
+    *   *Note: MinGW/GCC is NOT required.*
+
+5.  **Start the AI Servers:**
     We have a script to run all engine servers (Image, Text, Audio, Video) at once.
     ```bash
     python start_servers.py
