@@ -2,69 +2,159 @@
 
 A comprehensive DRM platform leveraging Blockchain for transparent ownership/licensing, IPFS for decentralized storage, and AI-powered Originality Checks to prevent piracy.
 
-## 📚 Documentation
-Detailed documentation is available in the `docs/` directory:
+---
 
--   **[Backend Documentation](docs/backend/README.md)**: API Setup, Auth, Encryption, Streaming.
--   **[Frontend Documentation](docs/frontend/README.md)**: React App, Wallet Integration, Marketplace.
--   **[Blockchain Documentation](docs/blockchain/README.md)**: Smart Contracts, Deployment, Testing.
--   **[Originality Engine](docs/originality_engine/README.md)**: AI detection services.
--   **[Step-by-Step Walkthrough](walkthrough.md)**: Guide to running the full system locally.
+## 📋 Prerequisites
 
-## 🚀 Quick Start
+Before running the project, ensure you have the following installed on your system:
 
-### Prerequisites
--   Node.js (v18+)
--   MongoDB (Running locally or Atlas URI)
--   MetaMask Browser Extension (Chrome/Firefox/Brave)
+1.  **Node.js (v18+)**: [Download Here](https://nodejs.org/)
+2.  **started MongoDB (Locally or Atlas)**: [Download Community Server](https://www.mongodb.com/try/download/community)
+3.  **Python (v3.10+)**: [Download Here](https://www.python.org/)
+4.  **MetaMask Extension**: Installed in your browser (Chrome/Edge/Brave).
+5.  **Git**: [Download Here](https://git-scm.com/)
 
-### 1. Start Blockchain (Hardhat Node)
-```bash
-cd blockchain
-npm install
-npx hardhat node
-```
-*Leave this running.*
+---
 
-### 2. Deploy Contracts
-In a new terminal:
-```bash
-cd blockchain
-npx hardhat run scripts/deploy.js --network localhost
-```
-*Note the deployed addresses.*
+## 📂 Project Structure
 
-### 3. Start Backend
-In a new terminal:
-```bash
-cd backend
-# Create .env file (see docs/backend/README.md)
-npm install
-npm run dev
-```
+-   `blockchain/`: Hardhat project for Smart Contracts (ERC721).
+-   `backend/`: Node.js/Express server for API, Auth, and Metadata.
+-   `frontend/`: React/Vite application for the User Interface.
+-   `originality-engine/`: Python Flask servers for Image/Audio/Video/Text analysis.
 
-### 4. Start Frontend
-In a new terminal:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Open `http://localhost:5173`.
+---
 
-## 🌟 Features
+## 🛠️ Step-by-Step Installation & Execution
 
--   **Asset Registration**: Upload Video, Audio, Image, Text. Encrypted & stored on IPFS.
--   **Originality Check**: AI verification to ensure uniqueness before minting.
--   **NFT Minting**: Ownership tokenized as ERC721 on Ethereum.
--   **Licensing Marketplace**: Buy/Sell licenses (Watch, Rent, Commercial) securely.
--   **Secure Streaming**: Decrypts content on-the-fly only for valid license holders.
--   **Dynamic Watermarking**: Forensic watermarking overlay on video streams.
+Follow these steps **in order** to set up the project on a fresh system.
 
-## 🛠 Tech Stack
+### Phase 1: Blockchain Setup (Hardhat)
 
--   **Frontend**: React, Vite, Tailwind CSS, Ethers.js.
--   **Backend**: Node.js, Express, MongoDB.
--   **Blockchain**: Hardhat, Solidity (ERC721).
--   **Storage**: IPFS, Local Encrypted Storage.
--   **AI/ML**: Python (Originality Detection).
+1.  Open a terminal in the `blockchain` folder:
+    ```bash
+    cd blockchain
+    npm install
+    ```
+2.  Start the Local Hardhat Node:
+    ```bash
+    npx hardhat node
+    ```
+    > **KEEP THIS TERMINAL RUNNING.** This simulates the Ethereum blockchain locally.
+
+3.  **Deploy Smart Contracts**:
+    Open a **NEW** terminal (Terminal 2), navigate to `blockchain`, and run:
+    ```bash
+    npx hardhat run scripts/deploy.js --network localhost
+    ```
+    *   Copy the **Registry Address** and **Licensing Address** printed in the output. You might need them later (though the frontend/backend usually configures them).
+
+### Phase 2: Originality Engine Setup (Python AI)
+
+1.  Open a **NEW** terminal (Terminal 3) in `originality-engine`:
+    ```bash
+    cd originality-engine
+    ```
+2.  Create and Activate a Virtual Environment:
+    ```bash
+    # Windows
+    python -m venv venv
+    .\venv\Scripts\activate
+    ```
+3.  Install Dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+    *(Note: This includes `torch`, `sentence-transformers`, `flask`, `numpy`, etc. It may take a few minutes).*
+
+4.  Start the AI Servers:**
+    We have a script to run all engine servers (Image, Text, Audio, Video) at once.
+    ```bash
+    python start_servers.py
+    ```
+    > **KEEP THIS TERMINAL RUNNING.** (Ports: 5001, 5002, 5003, 5004)
+
+### Phase 3: Backend Setup (Node.js API)
+
+1.  Open a **NEW** terminal (Terminal 4) in `backend`:
+    ```bash
+    cd backend
+    npm install
+    ```
+2.  **Environment Configuration**:
+    Create a file named `.env` in the `backend/` folder and paste the following (fill in your keys):
+    ```env
+    PORT=5000
+    MONGO_URI=mongodb://127.0.0.1:27017/drm_system
+    JWT_SECRET=your_super_secret_key_123
+    
+    # Pinata (IPFS) Keys - Register at https://app.pinata.cloud
+    PINATA_API_KEY=your_pinata_api_key
+    PINATA_SECRET_API_KEY=your_pinata_secret_key
+    PINATA_JWT=your_pinata_jwt_token
+    ```
+3.  Start the Backend Server:
+    ```bash
+    npm start
+    ```
+    > **KEEP THIS TERMINAL RUNNING.** (Port: 5000)
+
+### Phase 4: Frontend Setup (React UI)
+
+1.  Open a **NEW** terminal (Terminal 5) in `frontend`:
+    ```bash
+    cd frontend
+    npm install
+    ```
+2.  Start the Application:
+    ```bash
+    npm run dev
+    ```
+3.  Open your browser and visit: `http://localhost:5173`
+
+---
+
+## 🦊 Metamask Configuration (Critical)
+
+To interact with the local blockchain, you must configure MetaMask:
+
+1.  Click the MetaMask extension icon.
+2.  Go to **Settings** > **Networks** > **Add Network** > **Add a network manually**.
+3.  Enter specific details:
+    *   **Network Name**: Hardhat Local
+    *   **RPC URL**: `http://127.0.0.1:8545`
+    *   **Chain ID**: `31337`
+    *   **Currency Symbol**: `ETH`
+4.  **Import Test Account**:
+    *   Go to your **Blockchain Terminal (Terminal 1)**.
+    *   Scroll up to see the list of "Account #0", "Account #1", etc., and their **Private Keys**.
+    *   Copy the Private Key of "Account #0".
+    *   In MetaMask: Click **Account** (top center) > **Add account or hardware wallet** > **Import account**.
+    *   Paste the private key.
+    *   You should now see **10000 ETH** (or similar) in your balance.
+
+---
+
+## 🧪 Testing the Flow
+
+1.  **Register/Login**: Create an account on the frontend.
+2.  **Connect Wallet**: Click "Connect Wallet" and select the imported Hardhat account.
+3.  **Upload Asset**: Go to Dashboard > Upload. Select an image/video.
+4.  **Originality Check**: The system will talk to the Python Engine.
+    *   *Green Check*: Original.
+    *   *Red X*: Duplicate (if you re-upload the same file).
+5.  **Mint NFT**: If original, click "Mint". MetaMask will pop up to sign the transaction.
+6.  **Verify**: Check "My Assets" to see your tokenized content.
+
+---
+
+## ⚠️ Troubleshooting
+
+*   **Error: "Nonce too high" in MetaMask**:
+    *   Go to MetaMask Settings > Advanced > Clear activity tab data. This resets your transaction history for the local network.
+*   **Error: "Connection Refused" (Backend)**:
+    *   Ensure MongoDB is running (`mongod` in a separate terminal if not a service).
+*   **Error: "Module not found" (Python)**:
+    *   Ensure you activated the virtual environment (`.\venv\Scripts\activate`) before running `start_servers.py`.
+
+---
