@@ -1,19 +1,51 @@
+const License = require('../models/License');
+
+const Asset = require('../models/Asset');
 const fs = require('fs');
 const path = require('path');
-const Asset = require('../models/Asset');
-const { decryptFile } = require('../services/encryptionService');
+const crypto = require('crypto');
 const { ethers } = require('ethers');
-const DRMLicensingABI = require('../abi/DRMLicensing.json');
 
-// Contract Address (Ideally from .env)
-const DRM_LICENSING_ADDRESS = process.env.DRM_LICENSING_ADDRESS || "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+// CONSTANTS (Ideally move to env/config)
+const DRM_LICENSING_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+const DRMLicensingABI = [
+    "function checkLicense(address user, uint256 tokenId) public view returns (bool)"
+];
+
+// Assuming decryptFile is a helper
+const decryptFile = async (inputPath, key, iv, outputPath) => {
+    return new Promise((resolve, reject) => {
+        const algorithm = 'aes-256-cbc';
+        const decipher = crypto.createDecipheriv(algorithm, Buffer.from(key, 'hex'), Buffer.from(iv, 'hex'));
+        const input = fs.createReadStream(inputPath);
+        const output = fs.createWriteStream(outputPath);
+
+        input.pipe(decipher).pipe(output);
+
+        output.on('finish', resolve);
+        decipher.on('error', reject);
+    });
+};
+
 const RPC_URL = process.env.RPC_URL || "http://127.0.0.1:8545";
+
+// Helper for logging
+const logError = (msg, err) => {
+    const logPath = path.join(__dirname, '../../backend_error.log');
+    const logEntry = `[${new Date().toISOString()}] ${msg}: ${err ? err.stack || err : ''}\n`;
+    try {
+        fs.appendFileSync(logPath, logEntry);
+    } catch (e) {
+        console.error("Failed to write to log file:", e);
+    }
+};
 
 // @desc    Stream secure content
 // @route   GET /api/v1/assets/:id/stream
 // @access  Private (Needs License Check)
 exports.streamAsset = async (req, res, next) => {
     try {
+        console.log(`Stream Asset Request: ID=${req.params.id}, User=${req.user ? req.user.id : 'Guest'}`);
         const asset = await Asset.findById(req.params.id).select('+encryptionKey +iv');
         if (!asset) {
             return res.status(404).json({ success: false, error: 'Asset not found' });
@@ -21,32 +53,40 @@ exports.streamAsset = async (req, res, next) => {
 
         // Skip check if owner
         if (asset.owner.toString() !== req.user.id) {
-            // 1. Verify User License on Blockchain
+            // 1. Verify User License on Blockchain OR Database
             if (!req.user || !req.user.walletAddress) {
-                console.error("Stream 401 Debug:", {
-                    userExists: !!req.user,
-                    walletAddress: req.user?.walletAddress,
-                    userId: req.user?._id
-                });
+                // ... (debug logs)
                 return res.status(401).json({ success: false, error: 'User wallet not connected' });
             }
 
-            try {
-                const provider = new ethers.JsonRpcProvider(RPC_URL);
-                const contract = new ethers.Contract(DRM_LICENSING_ADDRESS, DRMLicensingABI, provider);
+            // A. Check Local License Database (Fast & Supports Expiry)
+            const localLicense = await License.findOne({ user: req.user.id, asset: asset._id, active: true });
 
-                if (!asset.blockchainId) {
-                    return res.status(403).json({ success: false, error: 'Asset not minted on blockchain' });
+            if (localLicense) {
+                // Check Expiry
+                if (localLicense.expiryTime && new Date() > new Date(localLicense.expiryTime)) {
+                    return res.status(403).json({ success: false, error: 'License Expired. Please renew.' });
                 }
+                // Valid License found in DB -> Proceed to Stream
+            } else {
+                // B. Fallback to Blockchain (Slow, Lifetime only if not synced)
+                try {
+                    const provider = new ethers.JsonRpcProvider(RPC_URL);
+                    const contract = new ethers.Contract(DRM_LICENSING_ADDRESS, DRMLicensingABI, provider);
 
-                const hasLicense = await contract.checkLicense(req.user.walletAddress, asset.blockchainId);
+                    if (!asset.blockchainId) {
+                        return res.status(403).json({ success: false, error: 'Asset not minted on blockchain' });
+                    }
 
-                if (!hasLicense) {
-                    return res.status(403).json({ success: false, error: 'No valid license found on blockchain' });
+                    const hasLicense = await contract.checkLicense(req.user.walletAddress, asset.blockchainId);
+
+                    if (!hasLicense) {
+                        return res.status(403).json({ success: false, error: 'No valid license found on blockchain or local DB' });
+                    }
+                } catch (bcError) {
+                    console.error("Blockchain verification failed:", bcError);
+                    return res.status(500).json({ success: false, error: 'License verification failed' });
                 }
-            } catch (bcError) {
-                console.error("Blockchain verification failed:", bcError);
-                return res.status(500).json({ success: false, error: 'License verification failed' });
             }
         }
 
@@ -78,6 +118,7 @@ exports.streamAsset = async (req, res, next) => {
                 await decryptFile(encryptedPath, asset.encryptionKey, asset.iv, decryptedPath);
             } catch (decErr) {
                 console.error("Decryption error:", decErr);
+                fs.appendFileSync('backend_error.log', `[${new Date().toISOString()}] Decryption Error: ${decErr.stack}\n`);
                 return res.status(500).json({ success: false, error: 'Decryption failed' });
             }
         }
@@ -108,14 +149,20 @@ exports.streamAsset = async (req, res, next) => {
                             text: `Licensed to ${walletShort}...`,
                             fontsize: 24,
                             fontcolor: 'white',
-                            x: 10,
-                            y: 10,
+                            x: '10',
+                            y: 'h-th-10', // Bottom Left
                             box: 1,
-                            boxcolor: 'black@0.5'
+                            boxcolor: 'black@0.5',
+                            alpha: 0.7
                         }
                     })
+                    // Ensure output format and fast start
                     .format('mp4')
-                    .movflags('frag_keyframe+empty_moov')
+
+                    .outputOptions([
+                        '-preset ultrafast', // Low latency
+                        '-movflags frag_keyframe+empty_moov'
+                    ])
                     .on('error', (err) => {
                         console.error('FFmpeg parsing error: ' + err.message);
                         // Do not verify streaming headers sentState here as ffmpeg might stream partial
@@ -127,6 +174,8 @@ exports.streamAsset = async (req, res, next) => {
                 res.status(500).json({ error: "Watermarking service unavailable" });
             }
 
+
+
         } else {
             // Standard Range Streaming (Seekable)
             if (range) {
@@ -136,20 +185,52 @@ exports.streamAsset = async (req, res, next) => {
                 const chunksize = (end - start) + 1;
                 const file = fs.createReadStream(decryptedPath, { start, end });
 
+                const ext = path.extname(asset.originalFileName).toLowerCase();
+                let contentType = 'application/octet-stream';
+
+                if (asset.contentType === 'video') contentType = 'video/mp4';
+                else if (asset.contentType === 'audio') contentType = 'audio/mpeg';
+                else if (asset.contentType === 'image') {
+                    if (ext === '.png') contentType = 'image/png';
+                    else if (ext === '.gif') contentType = 'image/gif';
+                    else if (ext === '.webp') contentType = 'image/webp';
+                    else contentType = 'image/jpeg';
+                }
+                else if (asset.contentType === 'text') {
+                    if (ext === '.pdf') contentType = 'application/pdf';
+                    else contentType = 'text/plain';
+                }
+
                 const head = {
                     'Content-Range': `bytes ${start}-${end}/${fileSize}`,
                     'Accept-Ranges': 'bytes',
                     'Content-Length': chunksize,
-                    'Content-Type': asset.contentType === 'video' ? 'video/mp4' : (asset.contentType === 'audio' ? 'audio/mpeg' : 'application/octet-stream'),
+                    'Content-Type': contentType,
                     'Cross-Origin-Resource-Policy': 'cross-origin', // Allow embedding
                     'Access-Control-Allow-Origin': '*'
                 };
                 res.writeHead(206, head);
                 file.pipe(res);
             } else {
+                const ext = path.extname(asset.originalFileName).toLowerCase();
+                let contentType = 'application/octet-stream';
+
+                if (asset.contentType === 'video') contentType = 'video/mp4';
+                else if (asset.contentType === 'audio') contentType = 'audio/mpeg';
+                else if (asset.contentType === 'image') {
+                    if (ext === '.png') contentType = 'image/png';
+                    else if (ext === '.gif') contentType = 'image/gif';
+                    else if (ext === '.webp') contentType = 'image/webp';
+                    else contentType = 'image/jpeg';
+                }
+                else if (asset.contentType === 'text') {
+                    if (ext === '.pdf') contentType = 'application/pdf';
+                    else contentType = 'text/plain';
+                }
+
                 const head = {
                     'Content-Length': fileSize,
-                    'Content-Type': asset.contentType === 'video' ? 'video/mp4' : (asset.contentType === 'audio' ? 'audio/mpeg' : 'application/octet-stream'),
+                    'Content-Type': contentType,
                     'Cross-Origin-Resource-Policy': 'cross-origin', // Allow embedding
                     'Access-Control-Allow-Origin': '*'
                 };
@@ -160,6 +241,7 @@ exports.streamAsset = async (req, res, next) => {
 
     } catch (err) {
         console.error("Streaming error:", err);
+        logError("Streaming Error", err);
         if (!res.headersSent) {
             res.status(500).json({ success: false, error: err.message });
         }

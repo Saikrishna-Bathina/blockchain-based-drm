@@ -6,6 +6,7 @@ const morgan = require('morgan');
 // Route files
 const authRoutes = require('./routes/auth');
 const assetRoutes = require('./routes/asset');
+const licenseRoutes = require('./routes/license');
 
 const app = express();
 
@@ -20,7 +21,13 @@ app.use(express.json());
 
 // Set security headers
 app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" }
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "frame-ancestors": ["'self'", "http://localhost:5173"],
+        },
+    },
 }));
 
 // Logger
@@ -35,5 +42,7 @@ app.get('/', (req, res) => {
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/assets', assetRoutes);
+// app.use('/api/v1/upload', uploadRoutes); // Use the new upload route file
+app.use('/api/v1/licenses', licenseRoutes);
 
 module.exports = app;
