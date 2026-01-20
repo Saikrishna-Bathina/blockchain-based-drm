@@ -1,5 +1,5 @@
 const express = require('express');
-const { uploadAsset, getAssets, getAsset, updateBlockchainId, verifyOriginality, secureAsset } = require('../controllers/asset');
+const { uploadAsset, getAssets, getAsset, updateBlockchainId, verifyOriginality, secureAsset, checkAssetOriginality } = require('../controllers/asset');
 const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
@@ -11,6 +11,9 @@ router.route('/')
 
 router.route('/upload')
     .post(protect, upload.single('file'), uploadAsset); // 'file' is the field name
+
+router.route('/check')
+    .post(upload.single('file'), checkAssetOriginality);
 
 router.route('/:id')
     .get(getAsset);

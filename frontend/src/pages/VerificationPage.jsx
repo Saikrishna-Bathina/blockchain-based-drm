@@ -1,110 +1,262 @@
-import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
-import { CheckCircle2, Copy } from "lucide-react"
+import { useState, useRef } from "react"
+import { Upload, X, FileText, Image as ImageIcon, Video, Music, AlertCircle, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert } from "lucide-react"
 import { Button } from "../components/ui/Button"
 import { Card, CardContent } from "../components/ui/Card"
+import axios from "axios"
 
 const VerificationPage = () => {
-  const [analyzing, setAnalyzing] = useState(true)
-  const [progress, setProgress] = useState(0)
+    const [file, setFile] = useState(null)
+    const [preview, setPreview] = useState(null)
+    const [analyzing, setAnalyzing] = useState(false)
+    const [result, setResult] = useState(null)
+    const [error, setError] = useState(null)
+    const [dragActive, setDragActive] = useState(false)
+    const fileInputRef = useRef(null)
 
-  useEffect(() => {
-    if (analyzing) {
-      const interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval)
-            setAnalyzing(false)
-            return 100
-          }
-          return prev + 1
-        })
-      }, 30) // Simulate 3 seconds analysis
-      return () => clearInterval(interval)
+    const handleDrag = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true)
+        } else if (e.type === "dragleave") {
+            setDragActive(false)
+        }
     }
-  }, [analyzing])
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-8 animate-in fade-in">
-      
-      {/* Analysis Circle */}
-      <div className="relative flex items-center justify-center w-64 h-64">
-         {/* Background Circle */}
-         <div className="absolute inset-0 rounded-full border-4 border-brand-surface opacity-30"></div>
-         
-         {/* Spinner/Progress */}
-         {analyzing && (
-            <div className="absolute inset-0 rounded-full border-4 border-brand-primary border-t-transparent animate-spin"></div>
-         )}
-         
-         {!analyzing && (
-             <div className="absolute inset-0 rounded-full border-4 border-brand-primary opacity-50 animate-pulse"></div>
-         )}
+    const handleDrop = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setDragActive(false)
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFile(e.dataTransfer.files[0])
+        }
+    }
 
-         <div className="z-10 text-center">
-            {analyzing ? (
-                <>
-                    <h2 className="text-2xl font-bold text-white mb-2">AI analyzing your asset...</h2>
-                    <span className="text-brand-primary font-mono text-xl">{progress}%</span>
-                </>
-            ) : (
-                <divWrapper />
-            )}
-         </div>
-      </div>
+    const handleChange = (e) => {
+        e.preventDefault()
+        if (e.target.files && e.target.files[0]) {
+            handleFile(e.target.files[0])
+        }
+    }
 
-      {!analyzing && (
-        <div className="w-full max-w-2xl space-y-6 animate-in slide-in-from-bottom-8 duration-700">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="bg-brand-surface/30 border-brand-surface">
-                   <CardContent className="p-6">
-                      <p className="text-sm text-gray-400 mb-1">Asset Fingerprint</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl font-mono text-white font-semibold">0x7A2c...fE3d</span>
-                        <Copy className="h-4 w-4 text-gray-500 cursor-pointer hover:text-white" />
-                      </div>
-                   </CardContent>
-                </Card>
-                <Card className="bg-brand-surface/30 border-brand-surface">
-                   <CardContent className="p-6">
-                      <p className="text-sm text-gray-400 mb-1">Similarity Score</p>
-                      <span className="text-3xl font-bold text-white">0.2%</span>
-                   </CardContent>
-                </Card>
-             </div>
+    const handleFile = (selectedFile) => {
+        setFile(selectedFile)
+        setResult(null)
+        setError(null)
 
-             <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-400">
-                    <span>Comparison Bar</span>
-                </div>
-                <div className="h-2 w-full bg-brand-surface rounded-full overflow-hidden">
-                    <div className="h-full bg-brand-primary w-[0.2%]"></div>
-                </div>
-             </div>
+        // Create preview
+        if (selectedFile.type.startsWith('image/')) {
+            const reader = new FileReader()
+            reader.onloadend = () => setPreview(reader.result)
+            reader.readAsDataURL(selectedFile)
+        } else {
+            setPreview(null)
+        }
+    }
 
-             <div className="p-6 rounded-xl border border-green-500/30 bg-green-500/10 flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-green-500 flex items-center justify-center text-brand-dark">
-                    <CheckCircle2 className="h-8 w-8" />
-                </div>
-                <div>
-                    <h3 className="text-lg font-bold text-white">Asset is Original</h3>
-                    <p className="text-sm text-gray-300">Congratulations! No significant matches were found in our extensive database. This asset appears to be unique.</p>
-                </div>
-             </div>
+    const removeFile = () => {
+        setFile(null)
+        setPreview(null)
+        setResult(null)
+        setError(null)
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ""
+        }
+    }
 
-             <div className="flex justify-center pt-4">
-                <Link to="/dashboard/register">
-                    <Button size="lg" className="h-12 px-8 text-base bg-brand-primary hover:bg-brand-primary/90 shadow-[0_0_20px_rgba(37,99,235,0.3)]">
-                        Register on Blockchain
-                    </Button>
-                </Link>
-             </div>
+    const getFileIcon = (type) => {
+        if (type.startsWith('image/')) return <ImageIcon className="h-8 w-8 text-brand-primary" />
+        if (type.startsWith('video/')) return <Video className="h-8 w-8 text-brand-primary" />
+        if (type.startsWith('audio/')) return <Music className="h-8 w-8 text-brand-primary" />
+        return <FileText className="h-8 w-8 text-brand-primary" />
+    }
+
+    const checkOriginality = async () => {
+        if (!file) return
+
+        setAnalyzing(true)
+        setError(null)
+
+        const formData = new FormData()
+        formData.append('file', file)
+
+        try {
+            // Using the new /check endpoint we created
+            const config = {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            }
+            
+            const response = await axios.post('http://localhost:5000/api/v1/assets/check', formData, config)
+            setResult(response.data.data)
+        } catch (err) {
+            console.error("Verification failed:", err)
+            setError(err.response?.data?.error || "Failed to verify asset. Please try again.")
+        } finally {
+            setAnalyzing(false)
+        }
+    }
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in pb-12">
+            <div className="text-center space-y-4">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                    Verify Asset Originality
+                </h1>
+                <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+                    Check if your content is unique before registering it on the blockchain. 
+                    Upload your asset for an instant analysis against our database.
+                </p>
+            </div>
+
+            <Card className="bg-brand-surface border-brand-border/50">
+                <CardContent className="p-8">
+                    {!file ? (
+                        <div 
+                            className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors cursor-pointer
+                                ${dragActive ? 'border-brand-primary bg-brand-primary/10' : 'border-gray-600 hover:border-gray-500 hover:bg-white/5'}`}
+                            onDragEnter={handleDrag}
+                            onDragLeave={handleDrag}
+                            onDragOver={handleDrag}
+                            onDrop={handleDrop}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <input 
+                                ref={fileInputRef}
+                                type="file" 
+                                className="hidden" 
+                                onChange={handleChange}
+                                accept="image/*,video/*,audio/*,text/*,application/pdf"
+                            />
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="h-16 w-16 rounded-full bg-brand-surface flex items-center justify-center border border-gray-700 shadow-xl">
+                                    <Upload className="h-8 w-8 text-brand-primary" />
+                                </div>
+                                <div>
+                                    <p className="text-lg font-medium text-white">Click or drag file to upload</p>
+                                    <p className="text-sm text-gray-400 mt-1">Supports Images, Video, Audio, & Text</p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {/* File Preview */}
+                            <div className="relative rounded-xl overflow-hidden bg-brand-dark/50 border border-gray-700/50 p-4 flex items-center gap-4">
+                                <button 
+                                    onClick={removeFile}
+                                    className="absolute top-2 right-2 p-1 rounded-full bg-gray-800/80 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                                
+                                {preview ? (
+                                    <img src={preview} alt="Preview" className="h-20 w-20 object-cover rounded-lg" />
+                                ) : (
+                                    <div className="h-20 w-20 bg-brand-surface rounded-lg flex items-center justify-center border border-gray-700">
+                                        {getFileIcon(file.type)}
+                                    </div>
+                                )}
+                                
+                                <div>
+                                    <p className="text-white font-medium truncate max-w-xs">{file.name}</p>
+                                    <p className="text-sm text-gray-400">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                </div>
+
+                                {!analyzing && !result && (
+                                    <Button onClick={checkOriginality} className="ml-auto bg-brand-primary hover:bg-brand-primary/90">
+                                        Check Originality
+                                    </Button>
+                                )}
+                            </div>
+
+                            {/* Analysis Progress */}
+                            {analyzing && (
+                                <div className="space-y-4 py-8 text-center animate-in fade-in">
+                                    <div className="relative h-32 w-32 mx-auto">
+                                        <div className="absolute inset-0 rounded-full border-4 border-brand-surface opacity-30"></div>
+                                        <div className="absolute inset-0 rounded-full border-4 border-brand-primary border-t-transparent animate-spin"></div>
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <ShieldCheck className="h-10 w-10 text-brand-primary animate-pulse" />
+                                        </div>
+                                    </div>
+                                    <p className="text-lg font-medium text-white">Analyzing content...</p>
+                                    <p className="text-sm text-gray-400">Comparing against global registry</p>
+                                </div>
+                            )}
+
+                            {/* Results */}
+                            {result && (
+                                <div className="animate-in slide-in-from-bottom-4 space-y-6">
+                                    <div className={`p-6 rounded-xl border flex items-center gap-4 ${
+                                        result.is_original 
+                                        ? 'bg-green-500/10 border-green-500/30' 
+                                        : 'bg-red-500/10 border-red-500/30'
+                                    }`}>
+                                        <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                                            result.is_original ? 'bg-green-500' : 'bg-red-500'
+                                        }`}>
+                                            {result.is_original 
+                                                ? <CheckCircle2 className="h-6 w-6 text-white" /> 
+                                                : <ShieldAlert className="h-6 w-6 text-white" />
+                                            }
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white">
+                                                {result.is_original ? "Asset is Original" : "Duplicate Detected"}
+                                            </h3>
+                                            <p className={`text-sm ${result.is_original ? 'text-green-200' : 'text-red-200'}`}>
+                                                {result.is_original 
+                                                    ? "No significant matches found in our database." 
+                                                    : "This content appears to closely match existing registered assets."}
+                                            </p>
+                                        </div>
+                                        <div className="ml-auto text-right">
+                                            <p className="text-sm text-gray-400 uppercase tracking-wider">Originality Score</p>
+                                            <span className={`text-4xl font-bold ${
+                                                result.is_original ? 'text-green-400' : 'text-red-400'
+                                            }`}>
+                                                {result.score}%
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    {result.is_original && (
+                                        <div className="flex justify-end pt-4">
+                                            <Button 
+                                                onClick={() => window.location.href = '/dashboard/register'} // Simple navigation
+                                                className="bg-brand-primary hover:bg-brand-primary/90 px-8"
+                                            >
+                                                Proceed to Register
+                                            </Button>
+                                        </div>
+                                    )}
+                                    
+                                    {!result.is_original && (
+                                        <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/20 flex gap-3">
+                                            <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                                            <p className="text-sm text-orange-200">
+                                                Note: You cannot register assets that are flagged as duplicates. 
+                                                If you believe this is an error, please ensure you own the rights to this content.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {error && (
+                                <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-200 flex items-center gap-2">
+                                    <AlertCircle className="h-5 w-5" />
+                                    {error}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
         </div>
-      )}
-    </div>
-  )
+    )
 }
-// Helper to keep the conditional rendering clean
-const divWrapper = () => <></> 
 
 export default VerificationPage

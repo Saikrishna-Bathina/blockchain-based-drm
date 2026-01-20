@@ -259,3 +259,51 @@ exports.updateBlockchainId = async (req, res, next) => {
         res.status(400).json({ success: false, error: err.message });
     }
 };
+// @desc    Check Asset Originality (Without Registration)
+// @route   POST /api/v1/assets/check
+// @access  Public
+exports.checkAssetOriginality = async (req, res, next) => {
+    let filePath = null;
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'Please upload a file' });
+        }
+
+        filePath = req.file.path;
+        console.log(`Checking Originality for temp file: ${filePath}`);
+
+        // Infer content type from mimetype
+        // Mimetypes: image/jpeg, video/mp4, audio/mpeg, text/plain, application/pdf
+        let contentType = 'text'; // Default?
+        const mime = req.file.mimetype;
+
+        if (mime.startsWith('image/')) contentType = 'image';
+        else if (mime.startsWith('video/')) contentType = 'video';
+        else if (mime.startsWith('audio/')) contentType = 'audio';
+        else if (mime === 'application/pdf' || mime.startsWith('text/')) contentType = 'text';
+
+        const originalityResult = await checkOriginality(filePath, contentType);
+
+        // Cleanup temp file immediately
+        if (filePath && fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            filePath = null;
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                is_original: originalityResult.is_original,
+                score: originalityResult.score,
+                details: originalityResult.details
+            }
+        });
+
+    } catch (err) {
+        // Cleanup on error
+        if (filePath && fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        res.status(400).json({ success: false, error: err.message });
+    }
+};
