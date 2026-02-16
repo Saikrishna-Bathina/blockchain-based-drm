@@ -35,7 +35,6 @@ COPY nginx.conf .
 COPY imageFiles/ ./imageFiles/
 COPY textFiles/ ./textFiles/
 COPY videoFiles/ ./videoFiles/
-COPY utility/ ./utility/ 
 # (Note: utility folder might not exist based on previous ls, but good practice to allow if it appears. 
 # based on ls, we have audioFiles, imageFiles, textFiles, videoFiles. We'll stick to those.)
 
