@@ -5,10 +5,10 @@ const fs = require('fs');
 // Configuration for Originality Engine URLs (Assuming running locally on specific ports)
 // Video: 5003, Text: 5002, Image: 8081, Audio: 8080
 const ENGINES = {
-    video: 'http://localhost:5003',
-    image: 'http://localhost:8081',
-    text: 'http://localhost:5002',
-    audio: 'http://localhost:8080'
+    video: process.env.ENGINE_VIDEO_URL || 'http://localhost:5003',
+    image: process.env.ENGINE_IMAGE_URL || 'http://localhost:8081',
+    text: process.env.ENGINE_TEXT_URL || 'http://localhost:5002',
+    audio: process.env.ENGINE_AUDIO_URL || 'http://localhost:8080'
 };
 
 exports.checkOriginality = async (filePath, contentType) => {

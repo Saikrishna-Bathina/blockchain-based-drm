@@ -2,80 +2,116 @@ import { useState, useEffect } from 'react'
 import { 
   FileText, 
   ShieldCheck, 
-  Files, 
   Database, 
-  Globe 
+  Globe, 
+  TrendingUp,
+  Clock,
+  ExternalLink,
+  MoreHorizontal
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/Card"
+import { Card, CardContent } from "../components/ui/Card"
 import { cn } from "../lib/utils"
 import api from "../lib/api"
 import { useAuth } from "../context/AuthContext"
+import { motion } from "framer-motion"
 
-const StatsCard = ({ title, value, icon: Icon, className }) => (
-  <Card className={cn("bg-brand-surface border-brand-surface", className)}>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium text-gray-400">
-        {title}
-      </CardTitle>
-      {Icon && <Icon className="h-4 w-4 text-gray-500" />}
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold text-white">{value}</div>
-    </CardContent>
-  </Card>
-)
+// --- Components ---
+
+const StatsCard = ({ title, value, icon: Icon, color, trend }) => {
+  const colors = {
+    blue: "text-blue-500 bg-blue-500/10 border-blue-500/20",
+    green: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+    purple: "text-purple-500 bg-purple-500/10 border-purple-500/20",
+    amber: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+  }
+
+  const activeColor = colors[color] || colors.blue
+
+  return (
+    <motion.div 
+      whileHover={{ y: -5 }}
+      className="relative overflow-hidden rounded-2xl p-5 border border-white/5 bg-white/[0.02] backdrop-blur-sm group hover:border-white/10 transition-colors"
+    >
+      <div className="flex justify-between items-start mb-4">
+          <div className={cn("p-3 rounded-xl", activeColor)}>
+              <Icon className="w-6 h-6" />
+          </div>
+          {trend && (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <TrendingUp className="w-3 h-3 text-emerald-500" />
+                <span className="text-[10px] font-bold text-emerald-400">{trend}</span>
+            </div>
+          )}
+      </div>
+      
+      <div>
+          <h3 className="text-2xl font-bold text-white tracking-tight mb-1">{value}</h3>
+          <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest">{title}</p>
+      </div>
+
+       {/* Subtle Mesh Gradient Background Effect */}
+       <div className={cn("absolute -right-6 -bottom-6 w-24 h-24 rounded-full blur-3xl opacity-20 pointer-events-none", color === 'blue' ? 'bg-blue-500' : color === 'green' ? 'bg-emerald-500' : color === 'purple' ? 'bg-purple-500' : 'bg-amber-500')} />
+    </motion.div>
+  )
+}
 
 const StatusBadge = ({ status }) => {
   const styles = {
-    Verified: "bg-green-500/10 text-green-500 border-green-500/20",
-    Pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-    Rejected: "bg-red-500/10 text-red-500 border-red-500/20",
-    Duplicate: "bg-red-500/10 text-red-500 border-red-500/20",
+    Verified: "bg-green-500/20 text-green-400 border-green-500/30",
+    Pending: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+    Rejected: "bg-red-500/20 text-red-400 border-red-500/30",
+    Duplicate: "bg-orange-500/20 text-orange-400 border-orange-500/30",
   }
   
   return (
-    <span className={cn("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2", styles[status] || styles.Pending)}>
+    <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-bold shadow-sm backdrop-blur-sm", styles[status] || styles.Pending)}>
+      <span className={cn("w-1 h-1 rounded-full", status === "Verified" ? "bg-green-400 animate-pulse" : "bg-current")} />
       {status}
     </span>
   )
 }
 
-const RecentActivityTable = () => {
-    const activities = [
-        { id: 1, name: "Project_Alpha_Art.jpg", date: "2023-10-26", status: "Verified" },
-        { id: 2, name: "Soundtrack_Final_Mix.wav", date: "2023-10-25", status: "Verified" },
-        { id: 3, name: "Manuscript_v3.pdf", date: "2023-10-24", status: "Pending" },
-        { id: 4, name: "Icon_Set_Design.svg", date: "2023-10-23", status: "Rejected" },
-        { id: 5, name: "Corporate_Branding.ai", date: "2023-10-22", status: "Verified" },
-    ]
-
-    return (
-        <div className="rounded-lg border border-brand-surface bg-brand-surface/50 overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                    <thead className="text-xs text-gray-400 uppercase bg-brand-surface border-b border-brand-surface">
-                        <tr>
-                            <th className="px-6 py-3">Asset Name/ID</th>
-                            <th className="px-6 py-3">Upload Date</th>
-                            <th className="px-6 py-3">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {activities.map((item) => (
-                            <tr key={item.id} className="border-b border-brand-surface/50 hover:bg-brand-surface/30">
-                                <td className="px-6 py-4 font-medium text-white">{item.name}</td>
-                                <td className="px-6 py-4 text-gray-400">{item.date}</td>
-                                <td className="px-6 py-4">
-                                    <StatusBadge status={item.status} />
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+const ActivityCard = ({ item }) => (
+    <div className="group flex items-center justify-between p-3 bg-brand-surface/40 hover:bg-brand-surface/60 border border-white/5 rounded-xl transition-all duration-200">
+        <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center border border-white/5">
+                <FileText className="w-5 h-5 text-gray-400 group-hover:text-brand-primary transition-colors" />
+            </div>
+            <div>
+                <h4 className="text-white font-bold text-xs truncate max-w-[150px] sm:max-w-xs">{item.title}</h4>
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mt-0.5">
+                    <Clock className="w-2.5 h-2.5" />
+                    <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                </div>
             </div>
         </div>
-    )
-}
+
+        <div className="flex items-center gap-4">
+             <div className="hidden sm:block text-right">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Status</p>
+                <StatusBadge status={item.originalityVerified ? "Verified" : "Pending"} />
+             </div>
+             
+             <div className="hidden md:block text-right min-w-[80px]">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Blockchain</p>
+                 {item.blockchainId ? (
+                     <div className="flex items-center justify-end gap-1 text-green-400 text-[10px] font-mono bg-green-900/20 px-1.5 py-0.5 rounded border border-green-500/20">
+                         <Database className="w-2.5 h-2.5" />
+                         #{item.blockchainId}
+                     </div>
+                 ) : (
+                     <span className="text-gray-600 text-[10px] italic">Not minted</span>
+                 )}
+             </div>
+
+             <button className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
+                <MoreHorizontal className="w-4 h-4" />
+             </button>
+        </div>
+    </div>
+)
+
+// --- Main Page ---
 
 const Dashboard = () => {
     const { user } = useAuth()
@@ -94,17 +130,9 @@ const Dashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            // In a real app, we'd have a specific /dashboard/stats endpoint.
-            // Here we can just fetch all assets for the user and calculate client-side for MVP
             const { data } = await api.get(`/assets?limit=100&showAll=true`)
             const allAssets = data.data
-            
-            const myAssets = allAssets // Assuming backend filters or we assume user sees all for now (Marketplace style)
-            // Ideally: const { data } = await api.get(`/assets?owner=${user._id}`) if searching user specific.
-            
-            // Let's just use the recent uploads globally for "Activity" and maybe user stats if possible.
-            // For this Dashboard, let's show Global Stats or Personal? Usually Personal.
-            // Let's filter by owner if possible.
+            const myAssets = allAssets 
             
             const total = myAssets.length
             const original = myAssets.filter(a => a.originalityVerified).length
@@ -121,59 +149,112 @@ const Dashboard = () => {
         }
     }
 
+    const getGreeting = () => {
+        const hour = new Date().getHours()
+        if (hour < 12) return "Good Morning"
+        if (hour < 18) return "Good Afternoon"
+        return "Good Evening"
+    }
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-white">Dashboard</h2>
-        <p className="text-gray-400">Welcome back, {user?.username}. Here's a summary of the ecosystem.</p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-         <StatsCard title="Total Assets" value={stats.total} icon={FileText} />
-         <StatsCard title="Verified Original" value={stats.original} icon={ShieldCheck} />
-         <StatsCard title="Minted on Blockchain" value={stats.minted} icon={Database} />
-         <StatsCard title="Pending Mint" value={stats.pending} icon={Globe} />
-      </div>
-
-      <div className="space-y-4">
-         <h3 className="text-xl font-semibold text-white">Recent Uploads</h3>
-         <div className="rounded-lg border border-brand-surface bg-brand-surface/50 overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                    <thead className="text-xs text-gray-400 uppercase bg-brand-surface border-b border-brand-surface">
-                        <tr>
-                            <th className="px-6 py-3">Asset Name</th>
-                            <th className="px-6 py-3">Date</th>
-                            <th className="px-6 py-3">Originality</th>
-                            <th className="px-6 py-3">Blockchain</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {recentActivity.map((item) => (
-                            <tr key={item._id} className="border-b border-brand-surface/50 hover:bg-brand-surface/30">
-                                <td className="px-6 py-4 font-medium text-white">{item.title}</td>
-                                <td className="px-6 py-4 text-gray-400">{new Date(item.createdAt).toLocaleDateString()}</td>
-                                <td className="px-6 py-4">
-                                    <StatusBadge status={item.originalityVerified ? "Verified" : "Pending"} />
-                                </td>
-                                <td className="px-6 py-4">
-                                     {item.blockchainId ? (
-                                         <span className="text-green-500 font-mono text-xs">#{item.blockchainId}</span>
-                                     ) : (
-                                         <span className="text-yellow-500 text-xs">Pending</span>
-                                     )}
-                                </td>
-                            </tr>
-                        ))}
-                         {recentActivity.length === 0 && (
-                            <tr>
-                                <td colSpan="4" className="px-6 py-8 text-center text-gray-500">No activity yet.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+    <div className="space-y-6 pb-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
+        <div>
+            <h1 className="text-2xl font-bold text-white mb-1">{getGreeting()}, {user?.username}</h1>
+            <p className="text-sm text-gray-400">Here's what's happening in your creative ecosystem today.</p>
         </div>
+        <div className="flex gap-2">
+            <button className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-xs font-medium text-white transition-colors">
+                Last 30 Days
+            </button>
+             <button className="px-3 py-1.5 bg-brand-primary hover:bg-brand-primary/90 rounded-lg text-xs font-bold text-white shadow-lg shadow-brand-primary/20 transition-all">
+                Generate Report
+            </button>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+         <StatsCard 
+            title="Total Assets" 
+            value={stats.total} 
+            icon={FileText} 
+            color="blue"
+            trend="+12%"
+         />
+         <StatsCard 
+            title="Verified Original" 
+            value={stats.original} 
+            icon={ShieldCheck} 
+            color="green"
+            trend="98% Safe"
+         />
+         <StatsCard 
+            title="On-Chain Assets" 
+            value={stats.minted} 
+            icon={Database} 
+            color="purple"
+         />
+         <StatsCard 
+            title="Pending Actions" 
+            value={stats.pending} 
+            icon={Globe} 
+            color="amber"
+         />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Activity */}
+          <div className="lg:col-span-2 space-y-6">
+             <div className="flex items-center justify-between">
+                 <h3 className="text-xl font-bold text-white">Recent Uploads</h3>
+                 <button className="text-sm text-brand-primary hover:text-brand-accent font-medium">View All</button>
+             </div>
+             
+             <div className="space-y-3">
+                {recentActivity.length > 0 ? (
+                    recentActivity.map((item) => (
+                        <ActivityCard key={item._id} item={item} />
+                    ))
+                ) : (
+                    <div className="p-8 text-center border dashed border-white/10 rounded-2xl bg-white/5">
+                        <p className="text-gray-500">No assets uploaded yet.</p>
+                    </div>
+                )}
+             </div>
+          </div>
+
+          {/* Quick Actions / Mini Widget */}
+          <div className="space-y-6">
+             <h3 className="text-xl font-bold text-white">Quick Actions</h3>
+             <div className="bg-brand-surface/30 border border-white/5 rounded-3xl p-6 space-y-4">
+                <button className="w-full p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center justify-between group transition-all">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-blue-500/20 text-blue-400">
+                             <TrendingUp className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                            <p className="text-white font-bold text-sm">View Analytics</p>
+                            <p className="text-gray-500 text-xs">Check verify rates</p>
+                        </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-white" />
+                </button>
+
+                 <button className="w-full p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center justify-between group transition-all">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-purple-500/20 text-purple-400">
+                             <Database className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                            <p className="text-white font-bold text-sm">Validations</p>
+                            <p className="text-gray-500 text-xs">Check pending requests</p>
+                        </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-white" />
+                </button>
+             </div>
+          </div>
       </div>
     </div>
   )

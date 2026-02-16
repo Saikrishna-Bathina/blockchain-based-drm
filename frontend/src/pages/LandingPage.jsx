@@ -1,330 +1,286 @@
+import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "../components/ui/Button"
 import { 
-  ShieldCheck, 
-  FileCheck, 
-  Database, 
-  Cpu, 
-  Lock,
-  Globe,
-  Zap,
-  Layers
+  ArrowRight, CheckCircle2, TrendingUp, FileText, FileAudio, Box, Link as LinkIcon,
+  Settings2, BarChart4, Brain, FileKey, Share2, PenTool, FileCode, AlertTriangle, 
+  EyeOff, Scissors, Banknote, Cpu, Database, Globe, Zap, Lock, ShieldCheck,
+  Music, Palette, Film, BookOpen
 } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
+import { cn } from "../lib/utils"
 
-const FeatureCard = ({ icon: Icon, title, description, delay }) => (
-  <motion.div 
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.5, delay }}
-    whileHover={{ y: -5, boxShadow: "0 10px 30px -10px rgba(59, 130, 246, 0.3)" }}
-    className="group relative rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm transition-all hover:border-brand-primary/50"
-  >
-    <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-brand-primary/20 text-brand-primary group-hover:scale-110 transition-transform duration-300">
-      <Icon className="h-7 w-7" />
-    </div>
-    <h3 className="mb-3 text-xl font-bold text-white group-hover:text-brand-primary transition-colors">{title}</h3>
-    <p className="text-gray-400 leading-relaxed">{description}</p>
-    
-    {/* Hover Glow Effect */}
-    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-  </motion.div>
+// --- SYSTEM FLOW ANIMATION COMPONENT (Kept simplified) ---
+// ... (Keeping the logic but stripping color) ...
+
+const MicroFlow = ({ step }) => {
+    const flows = {
+        0: [ { icon: FileText, label: "Raw File" }, { icon: ArrowRight, label: "" }, { icon: FileKey, label: "AES-256" }, { icon: ArrowRight, label: "" }, { icon: Box, label: "Chunking" } ],
+        1: [ { icon: FileAudio, label: "MP3/WAV" }, { icon: ArrowRight, label: "" }, { icon: Settings2, label: "Resampling" }, { icon: ArrowRight, label: "" }, { icon: BarChart4, label: "Spectrogram" }, { icon: ArrowRight, label: "" }, { icon: Brain, label: "CNN Model" } ],
+        2: [ { icon: Box, label: "File Shards" }, { icon: ArrowRight, label: "" }, { icon: FileCode, label: "CID Hash" }, { icon: ArrowRight, label: "" }, { icon: Share2, label: "DHT Net" }, { icon: ArrowRight, label: "" }, { icon: Globe, label: "Public Gateway" } ],
+        3: [ { icon: PenTool, label: "Sign Tx" }, { icon: ArrowRight, label: "" }, { icon: FileCode, label: "Smart Contract" }, { icon: ArrowRight, label: "" }, { icon: Database, label: "State Update" }, { icon: ArrowRight, label: "" }, { icon: LinkIcon, label: "TokenID" } ]
+    }
+    const currentFlow = flows[step] || []
+
+    return (
+        <div className="flex items-center gap-2">
+            {currentFlow.map((item, idx) => (
+                <motion.div 
+                    key={idx}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="flex flex-col items-center gap-1"
+                >
+                    <div className={cn("text-white", item.icon === ArrowRight ? "text-gray-600" : "")}>
+                         <item.icon className={cn("w-4 h-4 sm:w-5 sm:h-5", item.icon === ArrowRight ? "w-3 h-3" : "")} />
+                    </div>
+                </motion.div>
+            ))}
+        </div>
+    )
+}
+
+const SystemDeepDiveVisual = () => {
+    const [activeStep, setActiveStep] = useState(0) 
+    const [hoveredStep, setHoveredStep] = useState(null) 
+
+    useEffect(() => {
+        if (hoveredStep !== null) return 
+        const timer = setInterval(() => {
+            setActiveStep((prev) => (prev + 1) % 4)
+        }, 3000)
+        return () => clearInterval(timer)
+    }, [hoveredStep])
+
+    const displayStep = hoveredStep !== null ? hoveredStep : activeStep
+
+    return (
+        <div className="relative w-full h-full flex flex-col items-center justify-center bg-black rounded-xl overflow-hidden border border-zinc-800 p-4 group">
+            
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#33333312_1px,transparent_1px),linear-gradient(to_bottom,#33333312_1px,transparent_1px)] bg-[size:20px_20px]" />
+
+            <div className="relative z-10 flex gap-4 sm:gap-8 mb-8">
+                {[
+                    { id: 0, icon: FileText, label: "In" },
+                    { id: 1, icon: Cpu, label: "AI" },
+                    { id: 2, icon: Box, label: "IPFS" },
+                    { id: 3, icon: LinkIcon, label: "Chain" }
+                ].map((node) => {
+                    const isActive = displayStep === node.id
+                    
+                    return (
+                        <div 
+                            key={node.id}
+                            className="flex flex-col items-center gap-2 cursor-pointer relative"
+                            onMouseEnter={() => setHoveredStep(node.id)}
+                            onMouseLeave={() => setHoveredStep(null)}
+                        >
+                            <div 
+                                className={cn(
+                                    `w-12 h-12 sm:w-14 sm:h-14 rounded-lg border flex items-center justify-center transition-all duration-300`,
+                                    isActive ? "bg-white text-black border-white" : "text-gray-500 border-zinc-800 bg-zinc-900"
+                                )}
+                            >
+                                <node.icon className="w-5 h-5" />
+                            </div>
+                            <span className={cn(
+                                "text-[10px] font-mono uppercase tracking-wider transition-colors",
+                                isActive ? "text-white" : "text-gray-600"
+                            )}>
+                                {node.label}
+                            </span>
+                        </div>
+                    )
+                })}
+            </div>
+
+            <div className="relative z-10 h-24 w-full flex flex-col items-center justify-center bg-zinc-900/30 rounded-lg border border-zinc-800 px-4">
+                 <AnimatePresence mode="wait">
+                    <motion.div
+                        key={displayStep}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        className="w-full flex flex-col items-center"
+                    >
+                         <p className="text-[10px] text-gray-400 mb-2 font-mono uppercase tracking-[0.2em] w-full text-center border-b border-zinc-800 pb-1">
+                            {displayStep === 0 && "Secure Ingestion"}
+                            {displayStep === 1 && "Neural Assessment"}
+                            {displayStep === 2 && "Decentralized Storage"}
+                            {displayStep === 3 && "Smart Execution"}
+                         </p>
+                         <MicroFlow step={displayStep} />
+                    </motion.div>
+                 </AnimatePresence>
+            </div>
+        </div>
+    )
+}
+
+const TabButton = ({ active, onClick, icon: Icon, label }) => (
+    <button 
+        onClick={onClick}
+        className={cn(
+            "flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-colors",
+            active 
+                ? "bg-white text-black border border-white" 
+                : "border border-transparent text-gray-500 hover:text-white hover:bg-white/5"
+        )}
+    >
+        <Icon className="w-3.5 h-3.5" />
+        {label}
+    </button>
 )
 
-const StepItem = ({ number, title, description, delay }) => (
-  <motion.div 
-    initial={{ opacity: 0, x: -20 }}
-    whileInView={{ opacity: 1, x: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.5, delay }}
-    className="flex gap-6 relative"
-  >
-    <div className="flex flex-col items-center">
-      <motion.div 
-         initial={{ scale: 0 }}
-         whileInView={{ scale: 1 }}
-         transition={{ type: "spring", stiffness: 200, delay: delay + 0.2 }}
-         className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-brand-primary bg-brand-dark text-brand-primary font-bold z-10 shadow-[0_0_15px_rgba(59,130,246,0.5)]"
-      >
-        {number}
-      </motion.div>
-      <div className="h-full w-0.5 bg-gradient-to-b from-brand-primary/50 to-transparent my-2 absolute top-12 bottom-0 left-[23px]"></div>
+const InfoCard = ({ title, desc, icon: Icon }) => (
+    <div className="bg-zinc-900/50 p-4 rounded-lg border border-zinc-800 hover:border-zinc-600 transition-colors">
+        <div className="w-8 h-8 rounded border border-zinc-700 bg-black flex items-center justify-center mb-3">
+            <Icon className="w-4 h-4 text-white" />
+        </div>
+        <h4 className="font-bold text-white text-sm mb-1">{title}</h4>
+        <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
     </div>
-    <div className="pb-12 pt-2">
-      <h3 className="mb-2 text-xl font-bold text-white">{title}</h3>
-      <p className="text-gray-400 text-lg">{description}</p>
-    </div>
-  </motion.div>
 )
 
 const LandingPage = () => {
+  const [activeTab, setActiveTab] = useState('features')
+
   return (
-    <div className="min-h-screen bg-brand-dark overflow-hidden relative selection:bg-brand-primary/30">
-      
-      {/* Background Animated Blobs */}
-      <motion.div 
-        animate={{ 
-            scale: [1, 1.2, 1],
-            rotate: [0, 180, 0],
-            opacity: [0.1, 0.2, 0.1]
-        }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-brand-primary rounded-full blur-[120px] pointer-events-none z-0 mix-blend-screen"
-      />
-      <motion.div 
-        animate={{ 
-            scale: [1, 1.3, 1],
-            x: [0, 100, 0],
-            opacity: [0.05, 0.15, 0.05]
-        }}
-        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-        className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-brand-secondary rounded-full blur-[100px] pointer-events-none z-0 mix-blend-screen"
-      />
+    <div className="min-h-[calc(100vh-4rem)] bg-black text-white p-4 lg:p-6 flex flex-col font-sans selection:bg-white/20">
+        
+        {/* --- GRID LAYOUT --- */}
+        <div className="w-full mx-auto flex-1 grid grid-cols-1 lg:grid-cols-12 grid-rows-[auto_auto_1fr] lg:grid-rows-12 gap-3 max-w-[1400px] lg:min-h-[700px] self-center">
+            
+            {/* 1. HERO MAIN */}
+            <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="lg:col-span-7 lg:row-span-7 bg-zinc-950 rounded-lg p-6 lg:p-10 flex flex-col justify-center border border-zinc-800 relative overflow-hidden"
+            >
+                <div className="mb-6">
+                     <span className="px-2 py-1 rounded bg-white text-black text-[10px] font-bold uppercase tracking-wider">
+                        v2.0 Beta
+                     </span>
+                </div>
 
-      {/* Hero Section */}
-      <section className="relative z-10 pt-32 pb-24 lg:pt-48 lg:pb-32">
-        <div className="container mx-auto px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-             <span className="inline-block py-1 px-3 rounded-full bg-brand-primary/10 border border-brand-primary/30 text-brand-primary text-sm font-semibold mb-6 animate-pulse">
-                Next-Gen DRM Protection
-             </span>
-          </motion.div>
+                <h1 className="text-4xl lg:text-6xl font-bold tracking-tighter mb-4 leading-none">
+                    Secure Your <br className="hidden lg:block"/>
+                    <span className="text-zinc-500">Digital Rights</span>
+                </h1>
+                
+                <p className="text-sm lg:text-base text-gray-400 max-w-lg mb-8 leading-relaxed">
+                    AI-Powered Blockchain DRM. Detect duplicates, encrypt assets, and mint proof of ownership in one seamless flow.
+                </p>
 
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="mx-auto max-w-5xl text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-gray-400 sm:text-7xl mb-8 leading-tight"
-          >
-            Protect Your Digital Assets with <br className="hidden sm:block" />
-            <span className="text-brand-primary drop-shadow-[0_0_30px_rgba(59,130,246,0.3)]">AI</span> & <span className="text-brand-secondary drop-shadow-[0_0_30px_rgba(147,51,234,0.3)]">Blockchain</span>
-          </motion.h1>
+                <div className="flex flex-wrap gap-3">
+                    <Link to="/dashboard/upload">
+                        <Button size="lg" className="h-10 px-6 rounded bg-white text-black hover:bg-gray-200 transition-colors font-medium border border-transparent">
+                            Start Protecting <ArrowRight className="ml-2 w-4 h-4" />
+                        </Button>
+                    </Link>
+                    <Link to="/marketplace">
+                         <div className="h-10 px-6 flex items-center justify-center rounded border border-zinc-700 hover:bg-zinc-900 transition-colors cursor-pointer" >
+                            <span className="font-medium text-sm text-gray-300">Explore Market</span>
+                         </div>
+                    </Link>
+                </div>
+            </motion.div>
 
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mx-auto max-w-2xl text-xl text-gray-400 mb-12 leading-relaxed"
-          >
-            Secure, Traceable, and Decentralized. The ultimate rights management system for creators, reducing piracy and ensuring immutable ownership.
-          </motion.p>
+            {/* 2. SYSTEM VISUAL */}
+            <div className="lg:col-span-5 lg:row-span-5 bg-black rounded-lg border border-zinc-800 relative overflow-hidden flex items-center justify-center">
+                 <div className="w-full h-full p-2">
+                    <SystemDeepDiveVisual />
+                 </div>
+            </div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-6"
-          >
-             <Link to="/dashboard/upload">
-                <Button size="xl" className="h-14 px-10 text-lg rounded-full shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_35px_rgba(59,130,246,0.5)] transition-all transform hover:scale-105">
-                   Get Started Free
-                </Button>
-             </Link>
-             <Link to="/marketplace">
-                <Button size="xl" variant="outline" className="h-14 px-10 text-lg rounded-full border-white/20 hover:bg-white/10 text-white backdrop-blur-sm">
-                   Explore Marketplace
-                </Button>
-             </Link>
-          </motion.div>
+            {/* 3. STATS STRIP (Simplified) */}
+            <div className="lg:col-span-5 lg:row-span-2 bg-zinc-950/50 rounded-lg border border-zinc-800 flex items-center px-4 overflow-hidden">
+                <div className="flex gap-8 items-center text-xs text-gray-500 font-mono">
+                    <span className="text-white">AES-256</span> Encryption
+                    <span className="w-px h-3 bg-zinc-800" />
+                    <span className="text-white">IPFS</span> Storage
+                    <span className="w-px h-3 bg-zinc-800" />
+                    <span className="text-white">Polygon</span> Network
+                </div>
+            </div>
+
+            {/* 4. INFO HUB */}
+            <div className="lg:col-span-12 lg:row-span-5 grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0">
+                <div className="lg:col-span-8 bg-zinc-950 rounded-lg border border-zinc-800 p-5 flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex gap-2">
+                            <TabButton active={activeTab === 'features'} onClick={() => setActiveTab('features')} icon={Cpu} label="Core Tech" />
+                            <TabButton active={activeTab === 'workflow'} onClick={() => setActiveTab('workflow')} icon={Zap} label="How It Works" />
+                        </div>
+                        <div className="hidden sm:flex items-center gap-2 text-[10px] text-green-500 font-mono">
+                            <span className="relative flex h-1.5 w-1.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                            </span>
+                            System Operational
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        {activeTab === 'features' ? (
+                            <>
+                                <InfoCard title="Semantic AI" desc="Scans for deep fakes." icon={Cpu} />
+                                <InfoCard title="Smart License" desc="Auto-royalty payments." icon={Database} />
+                                <InfoCard title="IPFS Storage" desc="Decentralized hosting." icon={Globe} />
+                                <InfoCard title="Watermarking" desc="Invisible tracing." icon={Lock} />
+                            </>
+                        ) : (
+                            <>
+                                <InfoCard title="1. Upload" desc="Private Encryption." icon={ArrowRight} />
+                                <InfoCard title="2. Verify" desc="AI Checking." icon={ShieldCheck} />
+                                <InfoCard title="3. Mint" desc="NFT Ownership." icon={LinkIcon} />
+                                <InfoCard title="4. Earn" desc="Secure Licensing." icon={TrendingUp} />
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                <div className="lg:col-span-4 bg-zinc-950 rounded-lg border border-zinc-800 p-6 flex flex-col justify-between group">
+                     <div>
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                                <span className="text-[10px] font-mono text-white uppercase tracking-widest">Community</span>
+                            </div>
+                        </div>
+                        <h3 className="text-lg font-bold text-white mb-2">Creator Economy</h3>
+                        <p className="text-gray-400 text-xs">Join 2,500+ artists protecting their work.</p>
+                     </div>
+
+                     <div className="mt-6">
+                        <Link to="/signup" className="block">
+                            <Button className="w-full h-9 text-sm bg-white text-black hover:bg-gray-200 border-none">
+                                 Join Network
+                            </Button>
+                        </Link>
+                     </div>
+                </div>
+            </div>
         </div>
         
-        {/* Floating Shield Animation */}
-        <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.5 }}
-            className="mt-20 relative px-4"
-        >
-             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-brand-primary/20 rounded-full blur-[60px] animate-pulse"></div>
-             <motion.div 
-                animate={{ y: [0, -20, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="relative z-10 flex justify-center"
-             >
-                 <ShieldCheck className="w-48 h-48 text-white drop-shadow-[0_0_50px_rgba(59,130,246,0.8)]" />
-                 {/* Floating Orbitals */}
-                 <motion.div 
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                    className="absolute top-1/2 left-1/2 -ml-[120px] -mt-[120px] w-[240px] h-[240px] border border-brand-primary/30 rounded-full border-dashed"
-                 />
-                 <motion.div 
-                    animate={{ rotate: -360 }}
-                    transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-                    className="absolute top-1/2 left-1/2 -ml-[160px] -mt-[160px] w-[320px] h-[320px] border border-brand-secondary/20 rounded-full border-dotted"
-                 />
-             </motion.div>
-        </motion.div>
-      </section>
-
-      {/* Stats Bar */}
-      <section className="border-y border-white/5 bg-white/5 backdrop-blur-sm py-12 relative z-10">
-          <div className="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              {[
-                { label: "Assets Protected", value: "10,000+" },
-                { label: "Blockchain Txns", value: "50k+" },
-                { label: "Creators", value: "2,500+" },
-                { label: "Piracy Prevented", value: "99.9%" }
-              ].map((stat, i) => (
-                  <div key={i}>
-                      <div className="text-3xl lg:text-4xl font-bold text-white mb-1">{stat.value}</div>
-                      <div className="text-brand-primary uppercase text-sm font-semibold tracking-wider">{stat.label}</div>
-                  </div>
-              ))}
-          </div>
-      </section>
-
-      {/* Key Technologies */}
-      <section className="py-32 relative z-10">
-         <div className="container mx-auto px-4">
-             <div className="text-center mb-20">
-                <motion.h2 
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="text-4xl lg:text-5xl font-bold text-white mb-6"
-                >
-                    Key <span className="text-brand-primary">Technologies</span>
-                </motion.h2>
-                <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-                    We combine the best of Web3 and Artificial Intelligence to build the ultimate fortress for your content.
-                </p>
-             </div>
-             
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <FeatureCard 
-                    icon={Cpu} 
-                    title="AI Analysis" 
-                    description="Advanced algorithms scan content for unique fingerprints and detect unauthorized modifications instantly." 
-                    delay={0.1}
-                />
-                 <FeatureCard 
-                    icon={Database} 
-                    title="Blockchain Ledger" 
-                    description="Ethereum smart contracts provide indisputable, immutable proof of ownership and transaction history." 
-                    delay={0.2}
-                />
-                 <FeatureCard 
-                    icon={Globe} 
-                    title="Decentralized IPFS" 
-                    description="Assets are distributed across a global network, ensuring 100% uptime and censorship resistance." 
-                    delay={0.3}
-                />
-                 <FeatureCard 
-                    icon={Zap} 
-                    title="Smart Licensing" 
-                    description="Automate royalty payments and usage rights with self-executing smart contracts." 
-                    delay={0.4}
-                />
-             </div>
-         </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-32 bg-black/30 relative z-10">
-        <div className="absolute inset-0 bg-grid-white/5 mask-image-gradient"></div>
-        <div className="container mx-auto px-4 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-             <div>
-                <motion.h2 
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    className="text-4xl font-bold text-white mb-6"
-                >
-                    How It <span className="text-brand-secondary">Works</span>
-                </motion.h2>
-                <p className="text-gray-400 text-lg mb-12">
-                    A seamless workflow designed for ease of use without compromising security.
-                </p>
-
-                <div className="space-y-2">
-                   <StepItem 
-                       number="1" 
-                       title="Upload Asset" 
-                       description="Upload any digital file. Our system immediately encrypts it." 
-                       delay={0.1}
-                   />
-                   <StepItem 
-                       number="2" 
-                       title="AI Fingerprinting" 
-                       description="We generate a unique hash to prevent duplicate registrations." 
-                       delay={0.2}
-                   />
-                   <StepItem 
-                       number="3" 
-                       title="Mint NFT License" 
-                       description="Ownership is tokenized on the blockchain as an NFT." 
-                       delay={0.3}
-                   />
-                   <StepItem 
-                       number="4" 
-                       title="Secure Streaming" 
-                       description="Authorized users can stream content with dynamic watermarking." 
-                       delay={0.4}
-                   />
-                </div>
-             </div>
-             
-             {/* Visual Side */}
-             <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
-                className="relative h-[600px] rounded-3xl overflow-hidden border border-white/10 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-md flex items-center justify-center group"
-             >
-                 {/* Internal glowing orb */}
-                 <div className="absolute inset-0 bg-gradient-to-tr from-brand-primary/20 to-brand-secondary/20 opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
-                 
-                 <div className="relative z-10 grid grid-cols-2 gap-8 p-8">
-                     <motion.div 
-                        animate={{ y: [0, -15, 0] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0 }}
-                        className="bg-black/50 p-6 rounded-2xl border border-brand-primary/30 backdrop-blur-xl"
-                     >
-                         <Lock className="w-12 h-12 text-brand-primary mb-4" />
-                         <div className="h-2 w-20 bg-gray-700 rounded mb-2"></div>
-                         <div className="h-2 w-12 bg-gray-700 rounded"></div>
-                     </motion.div>
-                     <motion.div 
-                        animate={{ y: [0, 15, 0] }}
-                        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                        className="bg-black/50 p-6 rounded-2xl border border-brand-secondary/30 backdrop-blur-xl mt-12"
-                     >
-                         <Layers className="w-12 h-12 text-brand-secondary mb-4" />
-                         <div className="h-2 w-20 bg-gray-700 rounded mb-2"></div>
-                         <div className="h-2 w-12 bg-gray-700 rounded"></div>
-                     </motion.div>
-                 </div>
-             </motion.div>
-          </div>
+        {/* 5. PROBLEM SECTION (Simplified) */}
+        <div className="py-24 text-center">
+             <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-zinc-900 border border-zinc-800 text-gray-400 text-[10px] font-bold tracking-widest uppercase mb-6">
+                The Crisis
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight text-white">
+                The Industry is <span className="text-zinc-500">Bleeding Out.</span>
+            </h2>
+            <p className="text-gray-400 max-w-xl mx-auto mb-10">
+                Real-world data exposes the catastrophic revenue loss facing creators.
+            </p>
+             <Link to="/signup">
+                <button className="px-8 py-3 bg-white text-black font-bold rounded hover:bg-gray-200 transition-colors">
+                    Start Protecting Now
+                </button>
+            </Link>
         </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-32 relative z-10 text-center">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="container mx-auto px-4 max-w-4xl bg-gradient-to-r from-brand-primary/20 to-brand-secondary/20 rounded-3xl p-12 border border-white/10 backdrop-blur-lg"
-          >
-              <h2 className="text-4xl font-bold text-white mb-6">Ready to Secure Your Future?</h2>
-              <p className="text-xl text-gray-300 mb-10">Join thousands of creators who trust us with their digital legacy.</p>
-              <Link to="/signup">
-                  <Button size="xl" className="h-16 px-12 text-xl rounded-full bg-white text-brand-dark hover:bg-gray-100 shadow-xl shadow-white/10 hover:shadow-white/20">
-                      Start Protecting Now
-                  </Button>
-              </Link>
-          </motion.div>
-      </section>
-
     </div>
   )
 }

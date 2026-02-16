@@ -1,6 +1,6 @@
 module audio-originality
 
-go 1.25.5
+go 1.21
 
 require github.com/mdobak/go-xerrors v1.0.0
 

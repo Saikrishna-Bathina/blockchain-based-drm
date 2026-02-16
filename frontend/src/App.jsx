@@ -1,5 +1,6 @@
 import Marketplace from "./pages/Marketplace"
 import AssetDetails from "./pages/AssetDetails"
+import SystemArchitecture from "./pages/SystemArchitecture"
 
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import MainLayout from "./layouts/MainLayout"
@@ -14,6 +15,7 @@ import RegistrationPage from "./pages/RegistrationPage"
 import ProfilePage from "./pages/ProfilePage"
 import Placeholder from "./pages/Placeholder"
 import MyAssets from "./pages/MyAssets"
+import NotificationsPage from "./pages/NotificationsPage"
 
 function App() {
   return (
@@ -23,6 +25,7 @@ function App() {
       <Route element={<MainLayout />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<Placeholder title="About Us" />} />
+        <Route path="/how-it-works" element={<SystemArchitecture />} />
         <Route path="/features" element={<Placeholder title="Features" />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
@@ -32,6 +35,7 @@ function App() {
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
         <Route path="marketplace" element={<Marketplace />} />
         <Route path="upload" element={<UploadAsset />} />
         <Route path="verify" element={<VerificationPage />} />

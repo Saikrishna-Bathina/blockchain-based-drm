@@ -1,3 +1,11 @@
 @echo off
-set PYTHON_EXE="C:\Users\Sai Krishna\AppData\Local\Programs\Python\Python311\python.exe"
-%PYTHON_EXE% "textFiles\main.py" %*
+set "VENV_PYTHON=venv\Scripts\python.exe"
+if exist "%VENV_PYTHON%" (
+    "%VENV_PYTHON%" "textFiles\main.py" %*
+) else (
+    if exist "venv311_cpu\Scripts\python.exe" (
+        "venv311_cpu\Scripts\python.exe" "textFiles\main.py" %*
+    ) else (
+        python "textFiles\main.py" %*
+    )
+)

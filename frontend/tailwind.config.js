@@ -8,15 +8,33 @@ export default {
         extend: {
             colors: {
                 brand: {
-                    dark: "#0b0c15", // Deep Navy Background
-                    primary: "#2563eb", // Vibrant Blue
-                    secondary: "#f97316", // Orange
-                    accent: "#3b82f6", // Lighter Blue
-                    surface: "#1e293b", // Surface color for cards
+                    dark: "#000000", // Pure Black
+                    surface: "#18181b", // Zinc-900
+                    border: "#27272a", // Zinc-800
+                    primary: "#2563eb", // Blue-600
+                    secondary: "#4f46e5", // Indigo-600
+                    success: "#10b981", // Emerald-500
+                    warning: "#f59e0b", // Amber-500
+                    error: "#ef4444", // Red-500
                 },
             },
             fontFamily: {
                 sans: ['Inter', 'sans-serif'],
+            },
+            animation: {
+                'gradient-x': 'gradient-x 3s ease infinite',
+            },
+            keyframes: {
+                'gradient-x': {
+                    '0%, 100%': {
+                        'background-size': '200% 200%',
+                        'background-position': 'left center'
+                    },
+                    '50%': {
+                        'background-size': '200% 200%',
+                        'background-position': 'right center'
+                    },
+                },
             },
         },
     },
