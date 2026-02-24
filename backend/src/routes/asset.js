@@ -4,7 +4,7 @@ const { protect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 const router = express.Router();
-const { streamAsset } = require('../controllers/stream');
+const { streamAsset, getStreamToken } = require('../controllers/stream');
 
 router.route('/')
     .get(getAssets);
@@ -28,6 +28,9 @@ router.route('/:id/secure')
     .put(protect, secureAsset);
 
 router.route('/:id/stream')
-    .get(protect, streamAsset);
+    .get(streamAsset);
+
+router.route('/:id/token')
+    .get(protect, getStreamToken);
 
 module.exports = router;

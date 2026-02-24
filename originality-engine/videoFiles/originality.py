@@ -103,18 +103,26 @@ class VideoOriginalityRequest:
 
             # Synthesis Logic
             status = "Original"
+            match_id = None
             if len(visual_results) > 0: # Found visual match
                  status = "Duplicate (Visual)"
+                 match_id = visual_results[0].get("match_id") # Capture first visual match ID
+            
             if audio_result == "DUPLICATE":
                  if status == "Duplicate (Visual)":
                      status = "Duplicate (Audio+Visual)"
                  else:
                      status = "Duplicate (Audio)"
+                     # If only audio matches, we might need match_id from audio_matches
+                     # but audio server returns uint32 IDs.
+                     if len(audio_matches) > 0:
+                         match_id = str(audio_matches[0].get("song_id"))
 
             final_score = max(max_visual_score, audio_score / 100.0) # Audio score is likely 0-100 based on 'PARTIAL_SCORE_THRESH = 35'
 
             return {
                 "status": status,
+                "match_id": match_id,
                 "visual_score": float(max_visual_score),
                 "audio_result": audio_result,
                 "audio_score": float(audio_score),

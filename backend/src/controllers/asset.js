@@ -5,6 +5,8 @@ const { uploadToIPFS } = require('../services/ipfsService');
 const fs = require('fs');
 const path = require('path');
 
+const zlib = require('zlib');
+
 // @desc    Upload new asset
 // @route   POST /api/v1/assets/upload
 // @access  Private
@@ -33,6 +35,14 @@ exports.uploadAsset = async (req, res, next) => {
             licenseTerms: parsedLicenseTerms,
             originalityVerified: false
         });
+
+        // Generate CRC32 hash for Audio Engine ID
+        const hash = zlib.crc32(asset._id.toString()) & 0xffffffff;
+        asset.originalityHash = hash;
+        await asset.save();
+
+        const { createNotification } = require('../services/notificationService');
+        await createNotification(req.user.id, 'upload', 'Asset Uploaded', `New asset "${title}" uploaded for verification.`, { assetId: asset._id });
 
         res.status(201).json({
             success: true,
@@ -69,6 +79,28 @@ exports.verifyOriginality = async (req, res, next) => {
             asset.originalityVerified = originalityResult.is_original || false;
             asset.originalityScore = originalityResult.score || 0;
             asset.originalityReport = originalityResult;
+
+            // Resolve match details if duplicate
+            if (!asset.originalityVerified && originalityResult.match_id) {
+                try {
+                    let mid = originalityResult.match_id.toString();
+                    if (mid.includes('_')) mid = mid.split('_')[0];
+
+                    let match;
+                    if (asset.contentType === 'audio' || /^\d+$/.test(mid)) {
+                        match = await Asset.findOne({ originalityHash: parseInt(mid) }).populate('owner', 'username walletAddress');
+                    } else {
+                        match = await Asset.findById(mid).populate('owner', 'username walletAddress');
+                    }
+
+                    if (match) {
+                        // We could embed match details in the report or send separately
+                        asset.originalityReport.match = match;
+                    }
+                } catch (e) {
+                    console.error("Match resolution in verify failed", e);
+                }
+            }
 
             // If Original, Register it in the Engine!
             if (asset.originalityVerified) {
@@ -284,6 +316,25 @@ exports.checkAssetOriginality = async (req, res, next) => {
 
         const originalityResult = await checkOriginality(filePath, contentType);
 
+        let matchDetails = null;
+        if (!originalityResult.is_original && originalityResult.match_id) {
+            try {
+                let mid = originalityResult.match_id.toString();
+                // Strip video frame suffix (e.g. ID_0 -> ID)
+                if (mid.includes('_')) mid = mid.split('_')[0];
+
+                if (contentType === 'audio' || /^\d+$/.test(mid)) {
+                    // Lookup by CRC32 Hash
+                    matchDetails = await Asset.findOne({ originalityHash: parseInt(mid) }).populate('owner', 'username walletAddress');
+                } else {
+                    // Direct ID Lookup
+                    matchDetails = await Asset.findById(mid).populate('owner', 'username walletAddress');
+                }
+            } catch (e) {
+                console.error("Match ID resolution failed", e);
+            }
+        }
+
         // Cleanup temp file immediately
         if (filePath && fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
@@ -295,6 +346,7 @@ exports.checkAssetOriginality = async (req, res, next) => {
             data: {
                 is_original: originalityResult.is_original,
                 score: originalityResult.score,
+                match: matchDetails,
                 details: originalityResult.details
             }
         });

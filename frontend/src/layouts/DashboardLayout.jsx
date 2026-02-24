@@ -11,7 +11,8 @@ import {
   Bell,
   User,
   ChevronRight,
-  Wallet
+  Wallet,
+  ShoppingBag
 } from "lucide-react"
 import { Button } from "../components/ui/Button"
 import { useAuth } from "../context/AuthContext"
@@ -85,6 +86,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     <p className="px-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 mt-2">Menu</p>
                     <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard" onClick={() => setIsOpen(false)} />
                     <SidebarItem icon={FolderOpen} label="My Assets" to="/dashboard/assets" onClick={() => setIsOpen(false)} />
+                    <SidebarItem icon={ShoppingBag} label="My Licenses" to="/dashboard/licenses" onClick={() => setIsOpen(false)} />
                     <SidebarItem icon={LayoutDashboard} label="Marketplace" to="/dashboard/marketplace" onClick={() => setIsOpen(false)} />
                 </div>
 

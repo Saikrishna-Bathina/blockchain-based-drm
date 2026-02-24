@@ -52,6 +52,8 @@ contract DRMLicensing is Ownable {
         emit LicenseTermsSet(tokenId, _l1Price, _l2Price, _l3Price, _l4Price);
     }
 
+    uint256 public totalLicensesPurchased;
+
     function purchaseLicense(uint256 tokenId, string memory licenseType) public payable {
         LicenseTerms memory terms = assetLicenseTerms[tokenId];
         uint256 price = 0;
@@ -83,6 +85,8 @@ contract DRMLicensing is Ownable {
             expiry: expiry,
             timestamp: block.timestamp
         });
+
+        totalLicensesPurchased++;
 
         emit LicensePurchased(tokenId, msg.sender, licenseType, msg.value);
     }

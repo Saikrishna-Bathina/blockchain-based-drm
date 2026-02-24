@@ -35,51 +35,30 @@ exports.checkOriginality = async (filePath, contentType) => {
         let result = {
             is_original: false,
             score: 0,
+            match_id: data.match_id || data.content_id || null, // Capture match ID
             details: data
         };
 
         // Normalize Response based on Content Type
         if (contentType === 'audio') {
-            // Audio: { status: "ORIGINAL" | "DUPLICATE", top_score: float }
-            // PARTIAL_SCORE_THRESH = 35. If score >= 35 it is DUPLICATE.
-            // So score logic: 0 = Safe, 100 = Duplicate. 
-            // We want "Originality Score" -> Higher is better (more original) or Lower is better (less similar)?
-            // Usually Originality Score means "How Original It Is". 
-            // If data.top_score is "Similarity", then Originality = 100 - Similarity.
-
             const similarity = data.top_score || 0;
             result.is_original = (data.status === "ORIGINAL");
-            result.score = Math.max(0, 100 - similarity); // Convert similarity to originality
+            result.score = Math.max(0, 100 - similarity);
         }
         else if (contentType === 'image') {
-            // Image: { status: "ORIGINAL" | "DUPLICATE...", distance: int }
-            // Distance 0 = Exact Match. Higher distance = More Original.
-            // Threshold for duplicate is usually low (e.g. < 10).
             const distance = data.distance !== undefined ? data.distance : 100;
-
-            // Heuristic for score: If distance > 50, it's very original (100%). If distance 0, 0%.
             result.is_original = (data.status === "ORIGINAL");
-            // Simple mapping: min(100, distance * 2)
-            // Updated: Scale distance 0-32 to 0-100 score. 
-            // Distance 10 (Threshold) -> 31%. Distance 32+ -> 100%.
             result.score = Math.min(100, Math.round((distance / 32) * 100));
-            if (distance === -1) result.score = 100; // No match found
+            if (distance === -1) result.score = 100;
         }
         else if (contentType === 'video') {
-            // Video: { status: "Original" | "Duplicate...", audio_score, visual_score }
-            // videoFiles/originality.py logic
             result.is_original = (data.status === "Original");
-
-            // Composite score. data.visual_score is 0.0-1.0 (Similarity).
-            // data.audio_score is 0-100 (Similarity).
             const visualSim = (data.visual_score || 0) * 100;
             const audioSim = data.audio_score || 0;
             const maxSim = Math.max(visualSim, audioSim);
-
             result.score = Math.max(0, 100 - maxSim);
         }
         else if (contentType === 'text') {
-            // Text: { status: "Original" | "Duplicate", similarity_score: 0.0-1.0 }
             const sim = (data.similarity_score || 0) * 100;
             result.is_original = (data.status === "Original");
             result.score = Math.max(0, 100 - sim);
@@ -113,9 +92,16 @@ exports.registerAsset = async (filePath, contentType, assetId) => {
 
         form.append('file', fs.createReadStream(filePath));
         // Pass ID as both 'content_id' (Text) and 'label' (Audio/Image) to be compatible with all engines
+        // audio_id logic handled here if assetId is just a string
+        let audio_id = assetId;
+        if (contentType === 'audio') {
+            const zlib = require('zlib');
+            audio_id = zlib.crc32(assetId) & 0xffffffff;
+        }
+
         form.append('content_id', assetId);
         form.append('label', assetId);
-        form.append('id', assetId);
+        form.append('id', audio_id.toString());
 
         console.log(`[OriginalityService] Registering ${contentType} asset ${assetId} to ${engineUrl}${endpoint}`);
 

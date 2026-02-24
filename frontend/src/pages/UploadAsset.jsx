@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { UploadCloud, FileImage, FileVideo, CheckCircle2, AlertCircle, Loader2, Coins, ShieldCheck, Lock } from "lucide-react"
+import { useState, useRef } from "react"
+import { UploadCloud, FileImage, FileVideo, Music, FileText, X, CheckCircle2, AlertCircle, Loader2, Coins, ShieldCheck, Lock, Upload } from "lucide-react"
 import { Button } from "../components/ui/Button"
 import { Card, CardContent } from "../components/ui/Card"
 import { Input } from "../components/ui/Input"
@@ -11,22 +11,24 @@ import { ethers } from "ethers"
 import { DRMRegistryABI } from "../abi/DRMRegistry"
 import { DRMLicensingABI } from "../abi/DRMLicensing"
 import { getLicensesForType } from "../lib/licenseConfig"
+import { motion, AnimatePresence } from "framer-motion"
 
 // Placeholder address - Replace with deployed address
-const DRM_REGISTRY_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-const DRM_LICENSING_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"; 
+const DRM_REGISTRY_ADDRESS = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788";
+const DRM_LICENSING_ADDRESS = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"; 
 
 const UploadAsset = () => {
   const navigate = useNavigate()
-  const { user, provider: authProvider, switchNetwork } = useAuth()
+  const { user, provider: authProvider } = useAuth()
   const [dragActive, setDragActive] = useState(false)
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
+  const fileInputRef = useRef(null)
   
   // Form State
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [contentType, setContentType] = useState("image") // default
+  const [contentType, setContentType] = useState("image") // Auto-detected
   
   // License State
   const [prices, setPrices] = useState({
@@ -72,11 +74,13 @@ const UploadAsset = () => {
       setErrorMessage("")
       
       // Auto-detect type
-      if (selectedFile.type.startsWith('image')) setContentType('image')
-      else if (selectedFile.type.startsWith('video')) setContentType('video')
-      else if (selectedFile.type.startsWith('audio')) setContentType('audio')
-      else if (selectedFile.type === 'application/pdf') setContentType('text')
-      else setContentType('text') // fallback
+      let type = 'text';
+      if (selectedFile.type.startsWith('image')) type = 'image';
+      else if (selectedFile.type.startsWith('video')) type = 'video';
+      else if (selectedFile.type.startsWith('audio')) type = 'audio';
+      else if (selectedFile.type === 'application/pdf') type = 'text';
+      
+      setContentType(type)
 
       // Create preview
       const objectUrl = URL.createObjectURL(selectedFile)
@@ -154,24 +158,9 @@ const UploadAsset = () => {
           const provider = new ethers.BrowserProvider(authProvider)
           const signer = await provider.getSigner()
           
-          console.log("Debug Minting:", {
-              address: DRM_REGISTRY_ADDRESS,
-              abi: DRMRegistryABI,
-              signer: signer
-          });
-
           if (!DRM_REGISTRY_ADDRESS) throw new Error("Contract Address is missing");
 
           const contract = new ethers.Contract(DRM_REGISTRY_ADDRESS, DRMRegistryABI, signer)
-          
-          // Metadata URI could be the IPFS CID directly or a JSON metadata file
-          // For simplicity, using CID as URI
-          // registerAsset(to, contentHash, metadataURI)
-          console.log("Minting Args:", {
-              to: user?.walletAddress,
-              cid: uploadedAsset?.cid,
-              uri: `ipfs://${uploadedAsset?.cid}`
-          });
           
           const signerAddress = await signer.getAddress();
           
@@ -180,24 +169,13 @@ const UploadAsset = () => {
           const tx = await contract.registerAsset(
               signerAddress, 
               uploadedAsset.cid, 
-              `ipfs://${uploadedAsset.cid}`
+              `ipfs://${uploadedAsset.cid}`,
+              { gasLimit: 500000 }
           )
           
-          console.log("Mint Transaction Sent:", tx.hash)
           const receipt = await tx.wait()
-          console.log("Mint Confirmed:", receipt)
-          
-          // Extract Token ID from events if easier, or assume sequential if single user
-          // But receipt logs are best. 
-          // For now, let's just send the txHash to backend and let backend figure it out or just store hash
-          // Ideally we get the tokenId. ERC721 emits Transfer(from, to, tokenId)
-          
-          // We can parse logs
-          // For this MVP, we update with txHash.
           
           let tokenId = null;
-          // Simple log parsing (very fragile without full ABI of Transfer)
-          // Using the event AssetRegistered(tokenId, creator, contentHash)
           const event = receipt.logs.find(log => {
                try {
                   const parsed = contract.interface.parseLog(log)
@@ -212,10 +190,8 @@ const UploadAsset = () => {
 
           // 2. Set License Terms on DRMLicensing Contract
           if (tokenId) {
-              console.log("Setting License Terms for Token:", tokenId)
-              const licensingContract = new ethers.Contract(DRM_LICENSING_ADDRESS, DRMLicensingABI, signer) // Need imports
+              const licensingContract = new ethers.Contract(DRM_LICENSING_ADDRESS, DRMLicensingABI, signer)
               
-              // Helper to parse price
               const p1 = prices.license1.enabled ? ethers.parseEther(prices.license1.price.toString() || '0') : 0n;
               const p2 = prices.license2.enabled ? ethers.parseEther(prices.license2.price.toString() || '0') : 0n;
               const p3 = prices.license3.enabled ? ethers.parseEther(prices.license3.price.toString() || '0') : 0n;
@@ -223,7 +199,6 @@ const UploadAsset = () => {
               
               const tx2 = await licensingContract.setLicenseTerms(tokenId, p1, p2, p3, p4);
               await tx2.wait();
-              console.log("License Terms Set:", tx2.hash);
           }
 
           // Update Backend
@@ -241,252 +216,189 @@ const UploadAsset = () => {
       }
   }
 
-  return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-12">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-white mb-2">Upload & Register New Asset</h2>
-        <p className="text-gray-400">Upload your file, verify originality, and mint an NFT for ownership.</p>
-      </div>
+  const getTypeIcon = (type) => {
+      switch(type) {
+          case 'image': return <FileImage className="w-8 h-8 text-blue-400" />;
+          case 'video': return <FileVideo className="w-8 h-8 text-purple-400" />;
+          case 'audio': return <Music className="w-8 h-8 text-pink-400" />;
+          default: return <FileText className="w-8 h-8 text-gray-400" />;
+      }
+  }
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Left Column: File Upload */}
-          <div className="space-y-6">
-              <div 
+  return (
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
+      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          
+        {/* Left Column: Upload Area */}
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-3xl font-bold text-white tracking-tight">Create Asset</h1>
+                <p className="text-gray-400 mt-2">Secure your digital property on the blockchain.</p>
+            </div>
+
+            <div 
                 className={cn(
-                    "relative border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer min-h-[300px] flex flex-col items-center justify-center",
-                    dragActive ? "border-brand-primary bg-brand-primary/5" : "border-gray-700 hover:border-brand-primary/50 bg-brand-surface/20"
+                    "relative border-2 border-dashed rounded-2xl p-8 transition-all duration-300 min-h-[400px] flex flex-col items-center justify-center group overflow-hidden bg-zinc-900/30 backdrop-blur-sm",
+                    dragActive ? "border-brand-primary bg-brand-primary/10 scale-[1.01]" : "border-zinc-700 hover:border-brand-primary/50 hover:bg-zinc-800/50"
                 )}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
-                onClick={() => status === 'idle' && document.getElementById("file-upload").click()}
-              >
-                {previewUrl ? (
-                    <div className="w-full h-full flex flex-col items-center">
-                        {contentType === 'image' && <img src={previewUrl} alt="Preview" className="max-h-60 rounded-lg object-contain" />}
-                        {contentType === 'video' && <video src={previewUrl} className="max-h-60 rounded-lg" controls />}
-                        {contentType === 'audio' && <audio src={previewUrl} controls className="w-full mt-10" />}
-                         {status === 'idle' && (
-                             <Button variant="ghost" className="mt-2 text-red-400 hover:text-red-300" onClick={(e) => {
-                                e.stopPropagation()
-                                setFile(null)
-                                setPreviewUrl(null)
-                            }}>Remove</Button>
-                         )}
+                onClick={() => status === 'idle' && !file && fileInputRef.current?.click()}
+            >
+                {file ? (
+                    <div className="w-full h-full flex flex-col items-center relative z-10">
+                         {/* Preview Area */}
+                        <div className="relative w-full aspect-video bg-black/50 rounded-lg overflow-hidden border border-zinc-800 flex items-center justify-center mb-6">
+                            {contentType === 'image' && <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />}
+                            {contentType === 'video' && <video src={previewUrl} className="w-full h-full object-contain" controls />}
+                            {contentType === 'audio' && (
+                                <div className="text-center">
+                                    <Music className="w-16 h-16 text-zinc-600 mb-4 mx-auto" />
+                                    <audio src={previewUrl} controls className="w-full" />
+                                </div>
+                            )}
+                            {contentType === 'text' && (
+                                <div className="text-center p-8">
+                                    <FileText className="w-16 h-16 text-zinc-600 mb-2 mx-auto" />
+                                    <p className="text-zinc-400 truncate max-w-[200px]">{file.name}</p>
+                                </div>
+                            )}
+                            
+                            {status === 'idle' && (
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setFile(null)
+                                        setPreviewUrl(null)
+                                        setContentType('image') // reset
+                                    }}
+                                    className="absolute top-2 right-2 p-1 bg-black/60 hover:bg-red-500/80 rounded-full text-white transition-colors"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* File Info */}
+                        <div className="flex items-center gap-3 bg-zinc-900/80 px-4 py-3 rounded-full border border-zinc-800">
+                             {getTypeIcon(contentType)}
+                             <div className="text-left">
+                                 <p className="text-sm font-medium text-white truncate max-w-[150px]">{file.name}</p>
+                                 <p className="text-xs text-brand-primary font-mono uppercase">{contentType}</p>
+                             </div>
+                        </div>
+
+                        {/* Status Overlay */}
+                        {status !== 'idle' && (
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center z-20 rounded-2xl">
+                                {status === 'uploading' && <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />}
+                                {status === 'verifying' && <ShieldCheck className="w-12 h-12 text-yellow-500 animate-pulse mb-4" />}
+                                {status === 'securing' && <Lock className="w-12 h-12 text-purple-500 animate-pulse mb-4" />}
+                                {status === 'minting' && <Coins className="w-12 h-12 text-brand-primary animate-bounce mb-4" />}
+                                {status === 'complete' && <CheckCircle2 className="w-12 h-12 text-green-500 mb-4" />}
+                                {status === 'duplicate' && <AlertCircle className="w-12 h-12 text-red-500 mb-4" />}
+                                {status === 'error' && <X className="w-12 h-12 text-red-500 mb-4" />}
+                                
+                                <p className="text-xl font-bold text-white capitalize">{status}...</p>
+                                {status === 'duplicate' && <p className="text-red-400 text-sm mt-2">Asset already exists!</p>}
+                                {status === 'error' && <p className="text-red-400 text-sm mt-2 max-w-xs text-center">{errorMessage}</p>}
+                                {status === 'complete' && <p className="text-green-400 text-sm mt-2">NFT Minted Successfully!</p>}
+                                
+                                {status === 'error' && (
+                                     <Button variant="outline" className="mt-4 border-red-500 text-red-500 hover:bg-red-500/10" onClick={() => setStatus('idle')}>Try Again</Button>
+                                )}
+                                {status === 'complete' && (
+                                     <Button className="mt-4 bg-green-600 hover:bg-green-700 text-white" onClick={() => navigate('/dashboard')}>View Dashboard</Button>
+                                )}
+                            </div>
+                        )}
+                        
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center space-y-4">
-                        <div className="p-4 bg-brand-primary/20 rounded-full text-brand-primary">
-                            <UploadCloud className="h-10 w-10" />
+                    <div className="text-center space-y-4">
+                        <div className="p-5 bg-brand-primary/10 rounded-full text-brand-primary inline-flex mb-2 group-hover:scale-110 transition-transform duration-300">
+                            <UploadCloud className="w-8 h-8" />
                         </div>
                         <div>
-                            <p className="text-lg font-medium text-white">Drag & Drop File</p>
-                            <p className="text-sm text-gray-400 mt-1">Video, Audio, Image, Text</p>
+                            <p className="text-xl font-semibold text-white">Drag & drop your file</p>
+                            <p className="text-sm text-zinc-500 mt-2">Supports JPG, MP4, MP3, PDF</p>
                         </div>
-                        <Button variant="outline" className="mt-4">Browse Files</Button>
+                        <div className="flex items-center gap-3 w-full justify-center pt-2">
+                             <span className="h-px w-12 bg-zinc-800"></span>
+                             <span className="text-xs text-zinc-600 uppercase">OR</span>
+                             <span className="h-px w-12 bg-zinc-800"></span>
+                        </div>
+                        <Button variant="secondary" className="bg-zinc-800 hover:bg-zinc-700 text-white border-zinc-700">Browse Files</Button>
                     </div>
                 )}
-                 <input 
-                    id="file-upload" 
+                
+                <input 
+                    ref={fileInputRef}
                     type="file" 
                     className="hidden" 
                     onChange={handleChange}
                     disabled={status !== 'idle'}
-                 />
-              </div>
+                />
+            </div>
+            
+             {/* Progress Steps (Vertical) */}
+             <div className="flex justify-between px-4 opacity-50 text-xs">
+                 <div className={cn("flex items-center gap-2", ['uploading', 'verifying', 'securing', 'uploaded', 'minting', 'complete'].includes(status) ? "text-brand-primary opacity-100" : "")}>1. Upload</div>
+                 <div className={cn("flex items-center gap-2", ['verifying', 'securing', 'uploaded', 'minting', 'complete'].includes(status) ? "text-brand-primary opacity-100" : "")}>2. Verify</div>
+                 <div className={cn("flex items-center gap-2", ['securing', 'uploaded', 'minting', 'complete'].includes(status) ? "text-brand-primary opacity-100" : "")}>3. Secure</div>
+                 <div className={cn("flex items-center gap-2", ['minting', 'complete'].includes(status) ? "text-brand-primary opacity-100" : "")}>4. Mint</div>
+             </div>
+        </div>
 
-              {/* Status Display */}
-                {/* Dynamic Status Cards */}
-               {/* REAL-TIME VISUAL FLOW */}
-               {status !== 'idle' && (
-                 <div className="mb-8 mt-4 relative">
-                     {/* Progress Bar Background */}
-                     <div className="absolute left-0 top-4 w-full h-1 bg-gray-700 -z-10 rounded"></div>
-                     
-                     <div className="flex justify-between w-full">
-                         {/* Step 1: Upload */}
-                         <div className="flex flex-col items-center gap-2 bg-brand-background px-2">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-all ${
-                                  ['uploading'].includes(status) ? "bg-yellow-500 animate-pulse text-black" : "bg-green-500 text-black"
-                              }`}>
-                                 <UploadCloud className="w-4 h-4" />
-                             </div>
-                             <span className="text-xs text-green-400">Uploaded</span>
-                         </div>
- 
-                         {/* Step 2: Originality */}
-                         <div className="flex flex-col items-center gap-2 bg-brand-background px-2">
-                             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-all ${
-                                 ['verifying'].includes(status) ? "bg-yellow-500 animate-pulse text-black" :
-                                 (status === 'uploading' ? "bg-gray-700 text-gray-500" : 
-                                 (status === 'duplicate' || (uploadedAsset && !uploadedAsset.originalityVerified) ? "bg-red-500 text-white" : "bg-green-500 text-black"))
-                             }`}>
-                                 <ShieldCheck className="w-4 h-4" />
-                             </div>
-                             <span className={`text-xs ${
-                                 ['verifying'].includes(status) ? "text-yellow-400" :
-                                 (status === 'duplicate' || (uploadedAsset && !uploadedAsset.originalityVerified) ? "text-red-400" : 
-                                 (status === 'uploading' ? "text-gray-500" : "text-green-400"))
-                             }`}>
-                                 {status === 'verifying' ? "Verifying & Registering..." : (status === 'duplicate' || (uploadedAsset && !uploadedAsset.originalityVerified) ? "Duplicate" : "Verified & Registered")}
-                             </span>
-                         </div>
- 
-                         {/* Step 3: IPFS */}
-                         <div className="flex flex-col items-center gap-2 bg-brand-background px-2">
-                             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-all ${
-                                 ['securing'].includes(status) ? "bg-yellow-500 animate-pulse text-black" :
-                                 (['uploading', 'verifying', 'duplicate'].includes(status) ? "bg-gray-700 text-gray-500" : "bg-green-500 text-black")
-                             }`}>
-                                 <Lock className="w-4 h-4" />
-                             </div>
-                             <span className={`text-xs ${['securing'].includes(status) ? "text-yellow-400" : (['uploaded', 'minting', 'complete'].includes(status) ? "text-green-400" : "text-gray-500")}`}>
-                                 {status === 'securing' ? "Securing..." : "Encrypted & IPFS"}
-                             </span>
-                         </div>
- 
-                         {/* Step 4: Minting */}
-                         <div className="flex flex-col items-center gap-2 bg-brand-background px-2">
-                             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold transition-all ${
-                                 status === 'minting' ? "bg-yellow-500 animate-pulse text-black" :
-                                 (status === 'complete' || (uploadedAsset && uploadedAsset.blockchainId) ? "bg-green-500 text-black" : "bg-gray-700 text-gray-500")
-                             }`}>
-                                 <Coins className="w-4 h-4" />
-                             </div>
-                             <span className={`text-xs ${status === 'complete' ? "text-green-400" : (status === 'minting' ? "text-yellow-400" : "text-gray-500")}`}>
-                                 {status === 'complete' ? "Minted" : "Mint NFT"}
-                             </span>
-                         </div>
-                     </div>
-                 </div>
-               )}
-
-                {/* ERROR CARD */}
-                {status === "error" && (
-                   <Card className="bg-red-900/10 border-red-500/20 mb-6">
-                       <CardContent className="p-4 flex items-center space-x-4">
-                           <AlertCircle className="h-6 w-6 text-red-500" />
-                           <div>
-                               <p className="text-red-400 font-medium">Error</p>
-                               <p className="text-sm text-gray-400">{errorMessage}</p>
-                               <Button variant="link" onClick={() => setStatus("idle")} className="text-red-400 p-0 h-auto">Try Again</Button>
-                           </div>
-                       </CardContent>
-                   </Card>
-               )}
- 
-               {/* RESULT CARD: Uploaded/Complete/Duplicate */}
-               {(status === "uploaded" || status === "complete" || status === "duplicate") && uploadedAsset && (
-                   <Card className={`bg-${uploadedAsset.originalityVerified ? 'green' : 'red'}-900/10 border-${uploadedAsset.originalityVerified ? 'green' : 'red'}-500/20`}>
-                       <CardContent className="p-4">
-                            <div className="flex items-center space-x-4 mb-2">
-                                {uploadedAsset.originalityVerified ? (
-                                    <CheckCircle2 className="h-6 w-6 text-green-500" />
-                                ) : (
-                                    <AlertCircle className="h-6 w-6 text-red-500" />
-                                )}
-                                <div>
-                                    <p className={`${uploadedAsset.originalityVerified ? 'text-green-400' : 'text-red-400'} font-medium`}>
-                                        {uploadedAsset.originalityVerified ? "Asset Secured!" : "Upload Rejected (Duplicate)"}
-                                    </p>
-                                    <p className="text-sm text-gray-400">
-                                        {uploadedAsset.originalityVerified ? "Files encrypted and stored on IPFS." : "This content was flagged as a duplicate. It was NOT uploaded to IPFS."}
-                                    </p>
-                                </div>
-                            </div>
- 
-                            <div className="mt-2 p-3 bg-black/20 rounded text-sm space-y-1">
-                                <p className="text-gray-300">
-                                    Status: <span className={uploadedAsset.originalityVerified ? "text-green-400 font-bold" : "text-red-400 font-bold"}>
-                                        {uploadedAsset.originalityVerified ? "ORIGINAL" : "DUPLICATE"}
-                                    </span>
-                                </p>
-                                <p className="text-gray-300">
-                                    Originality Score: <span className={uploadedAsset.originalityVerified ? "text-green-400" : "text-yellow-400"}>
-                                        {uploadedAsset.originalityScore}/100
-                                    </span>
-                                </p>
-                                <p className="text-gray-300">IPFS CID: <span className="font-mono text-xs text-blue-400">{uploadedAsset.cid?.substring(0,12) || "N/A"}</span></p>
-                            </div>
-                           
-                           {status === "uploaded" && (
-                               <Button 
-                                   className={`w-full mt-4 text-white ${uploadedAsset.originalityVerified ? "bg-yellow-600 hover:bg-yellow-700" : "bg-gray-600 cursor-not-allowed"}`}
-                                   onClick={uploadedAsset.originalityVerified ? handleMint : null}
-                                   disabled={!uploadedAsset.originalityVerified}
-                               >
-                                   <Coins className="w-4 h-4 mr-2" />
-                                   {uploadedAsset.originalityVerified ? "Mint Ownership NFT" : "Minting Disabled (Duplicate Asset)"}
-                               </Button>
-                           )}
-                           
-                           {status === "complete" && (
-                               <div className="mt-4">
-                                   <p className="text-center text-green-400 font-bold mb-2">NFT Minted Successfully!</p>
-                                   <Button className="w-full" onClick={() => navigate('/dashboard')}>
-                                        Go to Dashboard
-                                   </Button>
-                               </div>
-                           )}
-                       </CardContent>
-                   </Card>
-               )}
-          </div>
-
-          {/* Right Column: Metadata Form */}
-          <div className="space-y-6">
-              <Card className="bg-brand-surface/50 border-brand-surface backdrop-blur-sm">
-                  <CardContent className="p-6 space-y-4">
-                      <h3 className="text-xl font-semibold text-white mb-4">Asset Details</h3>
-                      
+        {/* Right Column: Details Form */}
+        <div className="space-y-6">
+             <Card className="bg-black border border-zinc-800 rounded-2xl overflow-hidden">
+                  <div className="bg-zinc-900/50 px-6 py-4 border-b border-zinc-800">
+                      <h3 className="text-lg font-semibold text-white">Metadata & Licensing</h3>
+                  </div>
+                  <CardContent className="p-6 space-y-6">
                       <div className="space-y-2">
-                          <label className="text-sm text-gray-300">Title</label>
+                          <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider">Title</label>
                           <Input 
-                              placeholder="e.g. My Amazing Song" 
+                              placeholder="Name your asset..." 
                               value={title} 
                               onChange={(e) => setTitle(e.target.value)} 
                               disabled={status !== 'idle'}
+                              className="bg-zinc-900/50 border-zinc-800 focus:border-brand-primary text-white"
                           />
                       </div>
 
                       <div className="space-y-2">
-                          <label className="text-sm text-gray-300">Description</label>
+                          <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider">Description</label>
                           <textarea 
-                              className="w-full h-24 rounded-md border border-input bg-background px-3 py-2 text-sm text-white placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                              placeholder="Describe your content..."
+                              className="w-full h-24 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all resize-none"
+                              placeholder="What is this content about?"
                               value={description}
                               onChange={(e) => setDescription(e.target.value)}
                               disabled={status !== 'idle'}
                           />
                       </div>
 
-                       <div className="space-y-2">
-                          <label className="text-sm text-gray-300">Content Type</label>
-                          <select 
-                            className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-white"
-                            value={contentType}
-                            onChange={(e) => setContentType(e.target.value)}
-                            disabled={status !== 'idle'}
-                          >
-                              <option value="video">Video</option>
-                              <option value="audio">Audio</option>
-                              <option value="image">Image</option>
-                              <option value="text">Text</option>
-                          </select>
-                      </div>
-                  </CardContent>
-              </Card>
-
-              <Card className="bg-brand-surface/50 border-brand-surface backdrop-blur-sm">
-                  <CardContent className="p-6 space-y-4">
-                      <h3 className="text-xl font-semibold text-white mb-4">License Pricing (ETH)</h3>
-                      
-                      <div className="space-y-4">
-                          {getLicensesForType(contentType).map((license) => (
-                              <div key={license.id} className="p-3 rounded-lg border border-gray-700 bg-black/20">
-                                  <div className="flex items-center justify-between mb-2">
-                                      <div className="flex items-center gap-2">
+                      <div className="space-y-3 pt-4 border-t border-zinc-800">
+                          <div className="flex items-center justify-between">
+                             <label className="text-xs font-bold uppercase text-zinc-500 tracking-wider">License Options</label>
+                             <span className="text-[10px] bg-zinc-800 px-2 py-1 rounded text-zinc-400">Auto-detected: <span className="text-white font-bold uppercase">{contentType}</span></span>
+                          </div>
+                          
+                          <div className="space-y-3">
+                              {getLicensesForType(contentType).map((license) => (
+                                  <div 
+                                    key={license.id} 
+                                    className={cn(
+                                        "p-3 rounded-xl border transition-all duration-200",
+                                        prices[license.id]?.enabled 
+                                            ? "bg-brand-primary/5 border-brand-primary/30" 
+                                            : "bg-zinc-900/20 border-zinc-800 opacity-60 hover:opacity-100"
+                                    )}
+                                  >
+                                      <div className="flex items-center gap-3">
                                           <input 
                                               type="checkbox"
                                               checked={prices[license.id]?.enabled}
@@ -495,46 +407,63 @@ const UploadAsset = () => {
                                                   [license.id]: { ...prices[license.id], enabled: e.target.checked }
                                               })}
                                               disabled={status !== 'idle'}
-                                              className="rounded border-gray-600 bg-gray-700 text-brand-primary focus:ring-brand-primary"
+                                              className="rounded border-zinc-600 bg-zinc-700 text-brand-primary focus:ring-brand-primary w-4 h-4"
                                           />
-                                          <label className="text-sm font-medium text-gray-200">{license.name}</label>
+                                          <div className="flex-1">
+                                              <p className="text-sm font-medium text-white">{license.name}</p>
+                                              <p className="text-[10px] text-zinc-400">{license.description}</p>
+                                          </div>
                                       </div>
-                                  </div>
-                                  
-                                  <div className="pl-6 space-y-2">
-                                      <p className="text-xs text-gray-400">{license.description}</p>
+                                      
                                       {prices[license.id]?.enabled && (
-                                          <div className="flex items-center gap-2">
-                                              <span className="text-xs text-gray-400">Price (ETH):</span>
+                                           <div className="mt-3 pl-7 flex items-center gap-2">
+                                              <span className="text-xs text-zinc-500">Price (ETH)</span>
                                               <Input 
                                                   type="number" step="0.0001" 
                                                   placeholder="0.00"
                                                   value={prices[license.id]?.price}
                                                   onChange={(e) => setPrices({
                                                       ...prices, 
-                                                      [license.id]: { ...prices[license.id], price: e.target.value } // keep as string/value until submit
+                                                      [license.id]: { ...prices[license.id], price: e.target.value } 
                                                   })}
                                                   disabled={status !== 'idle'}
-                                                  className="h-8 w-32"
+                                                  className="h-7 w-24 bg-black border-zinc-700 text-xs"
                                               />
                                           </div>
                                       )}
                                   </div>
-                              </div>
-                          ))}
+                              ))}
+                          </div>
                       </div>
                   </CardContent>
-              </Card>
+             </Card>
 
-              {status === 'idle' && (
-                  <Button 
-                    className="w-full h-12 text-lg bg-brand-primary hover:bg-brand-primary/90"
-                    onClick={handleUpload}
-                  >
-                      Upload & Secure Asset
-                  </Button>
-              )}
-          </div>
+             {/* Action Button */}
+             <div className="pt-2">
+                  {(status === 'idle' || status === 'uploaded') && (
+                      <Button 
+                        size="lg"
+                        className={cn(
+                            "w-full h-14 text-lg font-bold shadow-xl transition-all",
+                            status === 'uploaded' 
+                                ? "bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black" 
+                                : "bg-white text-black hover:bg-zinc-200"
+                        )}
+                        onClick={status === 'uploaded' ? handleMint : handleUpload}
+                        disabled={status === 'uploaded' && !uploadedAsset?.originalityVerified}
+                      >
+                          {status === 'uploaded' ? (
+                              <><Coins className="w-5 h-5 mr-2" /> Mint Ownership NFT</>
+                          ) : (
+                              <><Upload className="w-5 h-5 mr-2" /> Upload & Verify</>
+                          )}
+                      </Button>
+                  )}
+                  {status === 'uploaded' && !uploadedAsset?.originalityVerified && (
+                      <p className="text-center text-red-500 text-sm mt-2 font-medium">Cannot mint duplicate asset.</p>
+                  )}
+             </div>
+        </div>
       </div>
     </div>
   )

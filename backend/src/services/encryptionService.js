@@ -44,3 +44,8 @@ exports.decryptFile = (encryptedPath, keyHex, ivHex, outputPath) => {
         output.on('error', (err) => reject(err));
     });
 };
+exports.getDecipher = (keyHex, ivHex) => {
+    const key = Buffer.from(keyHex, 'hex');
+    const iv = Buffer.from(ivHex, 'hex');
+    return crypto.createDecipheriv(algorithm, key, iv);
+};

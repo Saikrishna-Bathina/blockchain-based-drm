@@ -44,5 +44,6 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/assets', assetRoutes);
 // app.use('/api/v1/upload', uploadRoutes); // Use the new upload route file
 app.use('/api/v1/licenses', licenseRoutes);
+app.use('/api/v1/notifications', require('./routes/notification'));
 
 module.exports = app;

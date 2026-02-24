@@ -48,6 +48,9 @@ exports.login = async (req, res, next) => {
             return res.status(401).json({ success: false, error: 'Invalid credentials' });
         }
 
+        const { createNotification } = require('../services/notificationService');
+        await createNotification(user._id, 'login', 'Login Detected', `Account accessed at ${new Date().toLocaleTimeString()}`);
+
         sendTokenResponse(user, 200, res);
     } catch (err) {
         res.status(400).json({ success: false, error: err.message });

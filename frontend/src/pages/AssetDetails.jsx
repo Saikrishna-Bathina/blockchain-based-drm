@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Play, ShieldCheck, Download, AlertTriangle, Loader2, Lock, Coins } from 'lucide-react'
+import { Play, ShieldCheck, Download, AlertTriangle, Loader2, Lock, Coins, ShoppingBag } from 'lucide-react'
 import { Button } from "../components/ui/Button"
 import { Card, CardContent } from "../components/ui/Card"
 import api from "../lib/api"
@@ -11,8 +11,8 @@ import { DRMRegistryABI } from "../abi/DRMRegistry"
 import { getLicensesForType } from "../lib/licenseConfig"
 
 // Placeholder - Replace with actual address
-const DRM_LICENSING_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-const DRM_REGISTRY_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; 
+const DRM_LICENSING_ADDRESS = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e";
+const DRM_REGISTRY_ADDRESS = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"; 
 
 const AssetDetails = () => {
     const { id } = useParams()
@@ -23,8 +23,9 @@ const AssetDetails = () => {
     const [hasLicense, setHasLicense] = useState(false)
     const [licenseLoading, setLicenseLoading] = useState(false)
     
-    const [secureMode, setSecureMode] = useState(false)
+    const [secureMode, setSecureMode] = useState(true)
     const [isWindowBlurred, setIsWindowBlurred] = useState(false)
+    const [streamToken, setStreamToken] = useState(null)
 
     // Player State
     const videoRef = useRef(null)
@@ -102,6 +103,21 @@ const AssetDetails = () => {
             checkUserLicense()
         }
     }, [asset, user])
+
+    useEffect(() => {
+        if (hasLicense && !streamToken) {
+            fetchStreamToken()
+        }
+    }, [hasLicense])
+
+    const fetchStreamToken = async () => {
+        try {
+            const { data } = await api.get(`/assets/${asset._id}/token`)
+            setStreamToken(data.token)
+        } catch (error) {
+            console.error("Failed to fetch stream token", error)
+        }
+    }
 
     const handlePurchase = async (type) => {
         if (!window.ethereum) return alert("Please install MetaMask")
@@ -195,9 +211,8 @@ const AssetDetails = () => {
     if (!asset) return <div className="p-20 text-center text-white">Asset Not Found</div>
 
     // Construct stream URL with token & watermark
-    const token = localStorage.getItem('token')
-    let streamUrl = hasLicense 
-        ? `http://localhost:5000/api/v1/assets/${asset._id}/stream?token=${token}`
+    let streamUrl = (hasLicense && streamToken)
+        ? `http://localhost:5000/api/v1/assets/${asset._id}/stream?token=${streamToken}`
         : null
     
     if (streamUrl && secureMode) {

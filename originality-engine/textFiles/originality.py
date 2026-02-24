@@ -17,9 +17,18 @@ except ImportError:
 # SBERT Imports
 try:
     os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE' # Workaround for some Windows OpenMP conflicts
-    from sentence_transformers import SentenceTransformer
-    from sklearn.metrics.pairwise import cosine_similarity
-    SBERT_AVAILABLE = True
+    
+    # Restored: Semantic Features (SBERT/Torch) enabled by default.
+    # User confirms sufficient RAM (e.g., Oracle Cloud 24GB tier).
+    ENABLE_SEMANTIC_CHECK = os.environ.get('ENABLE_SEMANTIC_CHECK', 'true').lower() == 'true'
+
+    if ENABLE_SEMANTIC_CHECK:
+        from sentence_transformers import SentenceTransformer
+        from sklearn.metrics.pairwise import cosine_similarity
+        SBERT_AVAILABLE = True
+    else:
+        SBERT_AVAILABLE = False
+        print("Note: Semantic Engine (SBERT/Torch) disabled via config.")
 except Exception as e:
     SBERT_AVAILABLE = False
     print(f"Warning: Semantic Engine (SBERT/Torch) failed to load: {e}")

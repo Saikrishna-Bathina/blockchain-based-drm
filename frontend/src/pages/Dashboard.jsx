@@ -7,7 +7,12 @@ import {
   TrendingUp,
   Clock,
   ExternalLink,
-  MoreHorizontal
+  MoreHorizontal,
+  Bell,
+  LogIn,
+  ShoppingBag,
+  Coins,
+  ShieldCheck as VerifiedIcon
 } from "lucide-react"
 import { Card, CardContent } from "../components/ui/Card"
 import { cn } from "../lib/utils"
@@ -71,45 +76,42 @@ const StatusBadge = ({ status }) => {
   )
 }
 
-const ActivityCard = ({ item }) => (
-    <div className="group flex items-center justify-between p-3 bg-brand-surface/40 hover:bg-brand-surface/60 border border-white/5 rounded-xl transition-all duration-200">
-        <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center border border-white/5">
-                <FileText className="w-5 h-5 text-gray-400 group-hover:text-brand-primary transition-colors" />
-            </div>
-            <div>
-                <h4 className="text-white font-bold text-xs truncate max-w-[150px] sm:max-w-xs">{item.title}</h4>
-                <div className="flex items-center gap-1.5 text-[10px] text-gray-500 mt-0.5">
-                    <Clock className="w-2.5 h-2.5" />
-                    <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+const ActivityCard = ({ item }) => {
+    const typeConfigs = {
+        login: { icon: LogIn, color: "text-blue-400 bg-blue-500/10", label: "Login" },
+        upload: { icon: FileText, color: "text-purple-400 bg-purple-500/10", label: "Upload" },
+        mint: { icon: Coins, color: "text-yellow-400 bg-yellow-500/10", label: "Mint" },
+        purchase: { icon: ShoppingBag, color: "text-emerald-400 bg-emerald-500/10", label: "Purchase" },
+        security_alert: { icon: VerifiedIcon, color: "text-red-400 bg-red-500/10", label: "Alert" }
+    }
+
+    const config = typeConfigs[item.type] || typeConfigs.upload
+    const Icon = config.icon
+
+    return (
+        <div className="group flex items-center justify-between p-3 bg-brand-surface/40 hover:bg-brand-surface/60 border border-white/5 rounded-xl transition-all duration-200">
+            <div className="flex items-center gap-3">
+                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center border border-white/5", config.color)}>
+                    <Icon className="w-5 h-5" />
+                </div>
+                <div>
+                    <h4 className="text-white font-bold text-xs">{item.title}</h4>
+                    <p className="text-[10px] text-gray-500 mt-0.5">{item.message}</p>
+                    <div className="flex items-center gap-1.5 text-[9px] text-gray-600 mt-1 font-mono">
+                        <Clock className="w-2.5 h-2.5" />
+                        <span>{new Date(item.createdAt).toLocaleString()}</span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div className="flex items-center gap-4">
-             <div className="hidden sm:block text-right">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Status</p>
-                <StatusBadge status={item.originalityVerified ? "Verified" : "Pending"} />
-             </div>
-             
-             <div className="hidden md:block text-right min-w-[80px]">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Blockchain</p>
-                 {item.blockchainId ? (
-                     <div className="flex items-center justify-end gap-1 text-green-400 text-[10px] font-mono bg-green-900/20 px-1.5 py-0.5 rounded border border-green-500/20">
-                         <Database className="w-2.5 h-2.5" />
-                         #{item.blockchainId}
-                     </div>
-                 ) : (
-                     <span className="text-gray-600 text-[10px] italic">Not minted</span>
-                 )}
-             </div>
-
-             <button className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
-                <MoreHorizontal className="w-4 h-4" />
-             </button>
+            <div className="flex items-center gap-4">
+                 <span className={cn("px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest border border-white/5 bg-white/5", config.color)}>
+                    {config.label}
+                 </span>
+            </div>
         </div>
-    </div>
-)
+    )
+}
 
 // --- Main Page ---
 
@@ -119,7 +121,9 @@ const Dashboard = () => {
         total: 0,
         original: 0,
         pending: 0,
-        minted: 0
+        minted: 0,
+        totalSold: 0,
+        totalRevenue: 0
     })
     const [recentActivity, setRecentActivity] = useState([])
     const [loading, setLoading] = useState(true)
@@ -130,17 +134,57 @@ const Dashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
+            // 1. Fetch Assets
             const { data } = await api.get(`/assets?limit=100&showAll=true`)
             const allAssets = data.data
-            const myAssets = allAssets 
             
-            const total = myAssets.length
-            const original = myAssets.filter(a => a.originalityVerified).length
-            const minted = myAssets.filter(a => a.blockchainId).length
-            const pending = total - minted
+            const total = allAssets.length
+            const original = allAssets.filter(a => a.originalityVerified).length
+            const pending = allAssets.filter(a => !a.blockchainId).length
 
-            setStats({ total, original, minted, pending })
-            setRecentActivity(myAssets.slice(0, 5))
+            // Initial State Update with Asset Stats
+            setStats(prev => ({
+                ...prev,
+                total,
+                original,
+                pending
+            }))
+            
+            // 4. Fetch Recent Notifications
+            try {
+                const notifyRes = await api.get('/notifications');
+                setRecentActivity(notifyRes.data.data);
+            } catch (notifyErr) {
+                 console.warn("Notifications fetch failed", notifyErr);
+                 setRecentActivity(allAssets.slice(0, 5)); // Fallback to assets
+            }
+            
+
+            // 2. Fetch Live Blockchain Analytics
+            try {
+                const bcRes = await api.get('/licenses/blockchain-stats');
+                const bcData = bcRes.data.data;
+
+                setStats(prev => ({ 
+                    ...prev,
+                    minted: bcData.blockchain.totalMinted,
+                    totalSold: bcData.blockchain.totalSales,
+                    // We can also use bcData.database stats if preferred
+                }))
+            } catch (bcErr) {
+                console.warn("Failed to fetch live blockchain stats:", bcErr);
+            }
+            
+            // 3. (Optional) Fetch Local Detailed Revenue
+            try {
+                const licenseStatsRes = await api.get('/licenses/stats');
+                setStats(prev => ({ 
+                    ...prev,
+                    totalRevenue: licenseStatsRes.data.data.totalRevenue
+                }))
+            } catch (revErr) {
+                 console.warn("Revenue stats fetch failed", revErr);
+            }
             
         } catch (error) {
             console.error("Dashboard fetch error", error)
@@ -176,29 +220,30 @@ const Dashboard = () => {
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
          <StatsCard 
-            title="Total Assets" 
+            title="Registry Assets" 
             value={stats.total} 
             icon={FileText} 
             color="blue"
             trend="+12%"
          />
          <StatsCard 
-            title="Verified Original" 
-            value={stats.original} 
-            icon={ShieldCheck} 
-            color="green"
-            trend="98% Safe"
-         />
-         <StatsCard 
-            title="On-Chain Assets" 
-            value={stats.minted} 
+            title="Blockchain Minted" 
+            value={stats.minted || 0} 
             icon={Database} 
-            color="purple"
+            color="green"
+            trend="Live"
          />
          <StatsCard 
-            title="Pending Actions" 
-            value={stats.pending} 
+            title="Licenses Sold" 
+            value={stats.totalSold || 0} 
             icon={Globe} 
+            color="purple"
+            trend="Live"
+         />
+         <StatsCard 
+            title="Estimated Revenue (ETH)" 
+            value={stats.totalRevenue || "0.00"} 
+            icon={TrendingUp} 
             color="amber"
          />
       </div>
@@ -207,8 +252,10 @@ const Dashboard = () => {
           {/* Recent Activity */}
           <div className="lg:col-span-2 space-y-6">
              <div className="flex items-center justify-between">
-                 <h3 className="text-xl font-bold text-white">Recent Uploads</h3>
-                 <button className="text-sm text-brand-primary hover:text-brand-accent font-medium">View All</button>
+                 <h3 className="text-xl font-bold text-white">Recent Activity</h3>
+                 <button className="text-sm text-brand-primary hover:text-brand-accent font-medium flex items-center gap-1">
+                    <Bell className="w-3.5 h-3.5" /> View Notifications
+                 </button>
              </div>
              
              <div className="space-y-3">

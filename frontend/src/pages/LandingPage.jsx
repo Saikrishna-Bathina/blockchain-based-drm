@@ -143,8 +143,23 @@ const InfoCard = ({ title, desc, icon: Icon }) => (
     </div>
 )
 
+import api from "../lib/api"
+
 const LandingPage = () => {
   const [activeTab, setActiveTab] = useState('features')
+  const [stats, setStats] = useState({ totalAssets: 0, totalLicenses: 0, totalRevenue: "0.00" })
+
+  useEffect(() => {
+      const fetchStats = async () => {
+          try {
+              const { data } = await api.get('/licenses/public-stats')
+              setStats(data.data)
+          } catch (e) {
+              console.error("Failed to fetch public stats", e)
+          }
+      }
+      fetchStats()
+  }, [])
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-black text-white p-4 lg:p-6 flex flex-col font-sans selection:bg-white/20">
@@ -194,14 +209,23 @@ const LandingPage = () => {
                  </div>
             </div>
 
-            {/* 3. STATS STRIP (Simplified) */}
+            {/* 3. STATS STRIP */}
             <div className="lg:col-span-5 lg:row-span-2 bg-zinc-950/50 rounded-lg border border-zinc-800 flex items-center px-4 overflow-hidden">
-                <div className="flex gap-8 items-center text-xs text-gray-500 font-mono">
-                    <span className="text-white">AES-256</span> Encryption
-                    <span className="w-px h-3 bg-zinc-800" />
-                    <span className="text-white">IPFS</span> Storage
-                    <span className="w-px h-3 bg-zinc-800" />
-                    <span className="text-white">Polygon</span> Network
+                <div className="flex w-full justify-between items-center text-xs text-gray-400 font-mono px-2">
+                    <div className="flex flex-col">
+                        <span className="text-white font-bold text-lg">{stats.totalAssets}</span>
+                        <span>Assets Secured</span>
+                    </div>
+                    <span className="w-px h-8 bg-zinc-800" />
+                    <div className="flex flex-col">
+                        <span className="text-white font-bold text-lg">{stats.totalLicenses}</span>
+                        <span>Licenses Sold</span>
+                    </div>
+                    <span className="w-px h-8 bg-zinc-800" />
+                    <div className="flex flex-col">
+                        <span className="text-white font-bold text-lg">{stats.totalRevenue} ETH</span>
+                        <span>Value Generated</span>
+                    </div>
                 </div>
             </div>
 
@@ -265,21 +289,50 @@ const LandingPage = () => {
         </div>
         
         {/* 5. PROBLEM SECTION (Simplified) */}
+        {/* 5. PROBLEM SECTION - THE CRISIS */}
         <div className="py-24 text-center">
-             <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-zinc-900 border border-zinc-800 text-gray-400 text-[10px] font-bold tracking-widest uppercase mb-6">
-                The Crisis
+             <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold tracking-widest uppercase mb-8">
+                <AlertTriangle className="w-3 h-3" /> The Global Crisis
             </div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight text-white">
-                The Industry is <span className="text-zinc-500">Bleeding Out.</span>
+            <h2 className="text-3xl md:text-5xl font-bold mb-12 tracking-tight text-white">
+                The Industry is <span className="text-red-500">Bleeding Out.</span>
             </h2>
-            <p className="text-gray-400 max-w-xl mx-auto mb-10">
-                Real-world data exposes the catastrophic revenue loss facing creators.
-            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16 px-4">
+                <div className="bg-zinc-900/30 border border-zinc-800 p-8 rounded-2xl flex flex-col items-center hover:border-red-500/30 transition-colors">
+                    <span className="text-4xl md:text-5xl font-bold text-white mb-2">$71 B</span>
+                    <span className="text-sm text-gray-400 uppercase tracking-widest font-medium">Annual Revenue Loss</span>
+                    <p className="text-xs text-gray-500 mt-4 leading-relaxed max-w-[200px]">
+                        The global economy loses over $71 billion annually to digital piracy in video streaming alone.
+                    </p>
+                </div>
+                
+                <div className="bg-zinc-900/30 border border-zinc-800 p-8 rounded-2xl flex flex-col items-center hover:border-red-500/30 transition-colors">
+                    <span className="text-4xl md:text-5xl font-bold text-white mb-2">216 B</span>
+                    <span className="text-sm text-gray-400 uppercase tracking-widest font-medium">Illegal Site Visits</span>
+                    <p className="text-xs text-gray-500 mt-4 leading-relaxed max-w-[200px]">
+                        There were over 216 billion visits to piracy websites in 2024, diluting creator value.
+                    </p>
+                </div>
+
+                <div className="bg-zinc-900/30 border border-zinc-800 p-8 rounded-2xl flex flex-col items-center hover:border-red-500/30 transition-colors">
+                    <span className="text-4xl md:text-5xl font-bold text-white mb-2">250k+</span>
+                    <span className="text-sm text-gray-400 uppercase tracking-widest font-medium">Jobs Displacement</span>
+                    <p className="text-xs text-gray-500 mt-4 leading-relaxed max-w-[200px]">
+                        Creative industry professionals are losing their livelihoods due to unchecked IP theft.
+                    </p>
+                </div>
+            </div>
+
              <Link to="/signup">
                 <button className="px-8 py-3 bg-white text-black font-bold rounded hover:bg-gray-200 transition-colors">
-                    Start Protecting Now
+                    Stop the Bleeding • S t a r t  P r o t e c t i n g
                 </button>
             </Link>
+            
+            <p className="text-[10px] text-gray-600 mt-8 uppercase tracking-widest">
+                Source: Digital Piracy Reports 2024 • Global Innovation Policy Center
+            </p>
         </div>
     </div>
   )

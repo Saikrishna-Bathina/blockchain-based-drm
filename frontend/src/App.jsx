@@ -15,6 +15,7 @@ import RegistrationPage from "./pages/RegistrationPage"
 import ProfilePage from "./pages/ProfilePage"
 import Placeholder from "./pages/Placeholder"
 import MyAssets from "./pages/MyAssets"
+import MyLicenses from "./pages/MyLicenses"
 import NotificationsPage from "./pages/NotificationsPage"
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
         <Route path="verify" element={<VerificationPage />} />
         <Route path="register" element={<RegistrationPage />} />
         <Route path="assets" element={<MyAssets />} />
+        <Route path="licenses" element={<MyLicenses />} />
         <Route path="assets/:id" element={<AssetDetails />} />
         <Route path="reports" element={<Placeholder title="Reports" />} />
       </Route>

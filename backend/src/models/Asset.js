@@ -66,6 +66,10 @@ const AssetSchema = new mongoose.Schema({
     blockchainId: {
         type: String // To store on-chain ID after minting
     },
+    originalityHash: {
+        type: Number, // CRC32 or similar integer hash of ID (for Audio Engine)
+        index: true
+    },
     createdAt: {
         type: Date,
         default: Date.now

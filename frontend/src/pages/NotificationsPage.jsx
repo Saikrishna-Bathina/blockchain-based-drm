@@ -1,46 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Check, Info, ShieldAlert, FileCheck, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
+import api from '../lib/api';
 
 const NotificationsPage = () => {
-    const [notifications, setNotifications] = useState([
-        {
-            id: 1,
-            type: 'system',
-            title: 'System Maintenance Scheduled',
-            message: 'The platform will undergo scheduled maintenance on Feb 25th from 2:00 AM to 4:00 AM UTC. Services may be intermittently unavailable.',
-            timestamp: new Date().toISOString(),
-            read: false,
-        },
-        {
-            id: 2,
-            type: 'asset',
-            title: 'Asset Verification Complete',
-            message: 'Your asset "Project Alpha Blueprint" has been successfully verified against the global registry. You can now proceed to minting.',
-            timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-            read: false,
-        },
-        {
-            id: 3,
-            type: 'security',
-            title: 'New Login Detected',
-            message: 'We detected a new login from Chrome on Windows 11. If this wasn\'t you, please secure your account immediately.',
-            timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-            read: true,
-        },
-        {
-            id: 4,
-            type: 'system',
-            title: 'Welcome to BlockDRM',
-            message: 'Thank you for joining. Start by uploading your first asset to secure your digital rights.',
-            timestamp: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-            read: true,
-        }
-    ]);
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const markAllAsRead = () => {
+    useEffect(() => {
+        fetchNotifications();
+    }, []);
+
+    const fetchNotifications = async () => {
+        setLoading(true);
+        try {
+            const { data } = await api.get('/notifications');
+            setNotifications(data.data);
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const markAllAsRead = async () => {
+        // Optional: Implement mark as read in backend
         setNotifications(notifications.map(n => ({ ...n, read: true })));
     };
 
@@ -50,14 +36,17 @@ const NotificationsPage = () => {
 
     const getIcon = (type) => {
         switch (type) {
-            case 'system': return <Info className="h-5 w-5 text-blue-400" />;
-            case 'security': return <ShieldAlert className="h-5 w-5 text-red-400" />;
-            case 'asset': return <FileCheck className="h-5 w-5 text-green-400" />;
+            case 'login': return <Info className="h-5 w-5 text-blue-400" />;
+            case 'mint': return <FileCheck className="h-5 w-5 text-green-400" />;
+            case 'purchase': return <Check className="h-5 w-5 text-brand-primary" />;
+            case 'security_alert': return <ShieldAlert className="h-5 w-5 text-red-400" />;
             default: return <Bell className="h-5 w-5 text-zinc-400" />;
         }
     };
 
     const unreadCount = notifications.filter(n => !n.read).length;
+
+    if (loading) return <div className="text-center py-20 text-white">Loading Notifications...</div>;
 
     return (
         <div className="max-w-3xl mx-auto space-y-6 pb-12">
@@ -94,7 +83,7 @@ const NotificationsPage = () => {
                 ) : (
                     notifications.map((notification) => (
                         <div 
-                            key={notification.id}
+                            key={notification._id}
                             className={cn(
                                 "group relative p-4 rounded-lg border transition-all",
                                 notification.read 
@@ -119,7 +108,7 @@ const NotificationsPage = () => {
                                             {notification.title}
                                         </h4>
                                         <span className="text-xs text-zinc-500 font-mono">
-                                            {format(new Date(notification.timestamp), 'MMM d, h:mm a')}
+                                            {format(new Date(notification.createdAt), 'MMM d, h:mm a')}
                                         </span>
                                     </div>
                                     <p className="text-sm text-zinc-500 leading-relaxed">
@@ -128,7 +117,7 @@ const NotificationsPage = () => {
                                 </div>
 
                                 <button 
-                                    onClick={() => deleteNotification(notification.id)}
+                                    onClick={() => deleteNotification(notification._id)}
                                     className="absolute top-4 right-4 p-1 rounded hover:bg-zinc-800 text-zinc-600 hover:text-white opacity-0 group-hover:opacity-100 transition-all"
                                 >
                                     <X className="h-4 w-4" />

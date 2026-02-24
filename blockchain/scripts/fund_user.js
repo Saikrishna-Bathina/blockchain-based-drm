@@ -2,7 +2,7 @@ const hre = require("hardhat");
 
 async function main() {
     const [owner] = await hre.ethers.getSigners();
-    const recipient = "0xf4AEc57927278fF011081ea166fC38DAA4FDeAb8";
+    const recipient = "0x2546bcd3c84621e976d8185a91a922ae77ecec30";
     const amount = hre.ethers.parseEther("100.0"); // 100 ETH
 
     console.log(`Sending ${hre.ethers.formatEther(amount)} ETH from ${owner.address} to ${recipient}...`);

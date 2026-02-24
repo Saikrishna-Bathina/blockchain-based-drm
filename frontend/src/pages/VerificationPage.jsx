@@ -212,27 +212,55 @@ const VerificationPage = () => {
                                             </div>
                                         </div>
 
-                                        <div className="bg-zinc-950 rounded border border-zinc-800 p-4 mb-6">
-                                             <p className="text-sm text-zinc-400 leading-relaxed">
-                                                {result.is_original 
-                                                    ? "This content appears to be unique. No significant matches were found in the global registry." 
-                                                    : "This content closely matches existing assets in the registry. Registration may be rejected."}
-                                            </p>
-                                        </div>
-
-                                        {result.is_original ? (
-                                            <Button 
-                                                onClick={() => window.location.href = '/dashboard/register'}
-                                                className="w-full bg-white text-black hover:bg-zinc-200"
-                                            >
-                                                Proceed to Registration
-                                            </Button>
-                                        ) : (
-                                            <div className="flex items-center gap-2 text-xs text-zinc-500 bg-zinc-900/50 p-3 rounded border border-zinc-800">
-                                                <AlertTriangle className="h-4 w-4 shrink-0" />
-                                                Upload a unique asset to proceed with registration.
+                                    {result.match && (
+                                        <div className="bg-zinc-900 border border-zinc-700/50 rounded-lg p-5 mb-6 space-y-4 animate-in slide-in-from-bottom-2">
+                                            <div className="flex items-center gap-2 pb-3 border-b border-zinc-800">
+                                                <ShieldAlert className="h-4 w-4 text-red-500" />
+                                                <h4 className="text-sm font-bold text-white uppercase tracking-wider">Original Registration Found</h4>
                                             </div>
-                                        )}
+                                            
+                                            <div className="grid grid-cols-2 gap-6">
+                                                <div className="space-y-1">
+                                                    <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Asset Name</p>
+                                                    <p className="text-sm text-zinc-200 font-medium truncate">{result.match.title}</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Registered Owner</p>
+                                                    <p className="text-sm text-zinc-200 font-medium truncate">{result.match.owner?.username || "Anonymous"}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Wallet Address</p>
+                                                <p className="text-[11px] text-brand-primary font-mono truncate bg-brand-primary/5 px-2 py-1 rounded border border-brand-primary/10">
+                                                    {result.match.owner?.walletAddress || "Unknown"}
+                                                </p>
+                                            </div>
+
+                                            <div className="pt-2">
+                                                <p className="text-[10px] text-zinc-500 italic">
+                                                    Duplicate detected via {result.details?.status || "Fuzzy Match"}.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {result.is_original ? (
+                                        <Button 
+                                            onClick={() => window.location.href = '/dashboard/upload'}
+                                            className="w-full bg-white text-black hover:bg-zinc-200 font-bold"
+                                        >
+                                            Proceed to Minting
+                                        </Button>
+                                    ) : (
+                                        <div className="flex items-center gap-3 text-xs text-zinc-400 bg-red-500/5 p-4 rounded-lg border border-red-500/20 shadow-inner">
+                                            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
+                                            <div>
+                                                <p className="font-bold text-red-400 mb-0.5 uppercase tracking-wide">Verification Failed</p>
+                                                <p>Upload a unique asset to proceed. Our system ensures only original creations are registered.</p>
+                                            </div>
+                                        </div>
+                                    )}
                                      </div>
                                 </div>
                             )}
