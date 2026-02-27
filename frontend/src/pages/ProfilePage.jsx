@@ -6,7 +6,7 @@ import { User, Mail, Wallet, Shield, Calendar, Clock, Copy, ExternalLink } from 
 import { format } from 'date-fns';
 
 const ProfilePage = () => {
-    const { user, connectWallet } = useAuth(); // Assuming 'disconnectWallet' might be available or handled elsewhere
+    const { user, connectWallet, disconnectWallet } = useAuth();
 
     if (!user) {
         return (
@@ -102,7 +102,11 @@ const ProfilePage = () => {
                                     </div>
                                 </div>
 
-                                <Button variant="outline" className="w-full text-xs h-9 border-zinc-700 hover:bg-zinc-900 text-zinc-400">
+                                 <Button 
+                                    variant="outline" 
+                                    onClick={disconnectWallet}
+                                    className="w-full text-xs h-9 border-zinc-700 hover:bg-zinc-900 text-zinc-400"
+                                >
                                     Disconnect Wallet
                                 </Button>
                             </>

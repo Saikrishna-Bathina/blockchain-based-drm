@@ -8,3 +8,5 @@ sentence-transformers
 scikit-learn
 flask
 flask-cors
+moviepy
+requests

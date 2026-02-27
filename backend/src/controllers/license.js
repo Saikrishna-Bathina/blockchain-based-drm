@@ -209,7 +209,8 @@ exports.getBlockchainStats = async (req, res, next) => {
             totalMinted = await registry.totalSupply();
             totalSales = await licensing.totalLicensesPurchased();
         } catch (e) {
-            console.error("Blockchain Stats Fetch Error:", e.message);
+            console.error("Blockchain Stats Fetch Error (RPC likely busy):", e.message);
+            // We keep totalMinted/totalSales as 0 and continue to return DB stats
         }
 
         // Combine with DB stats for rich data

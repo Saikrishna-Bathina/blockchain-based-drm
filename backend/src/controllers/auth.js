@@ -116,7 +116,25 @@ exports.connectWallet = async (req, res, next) => {
         });
 
     } catch (err) {
-        console.error('[ConnectWallet] Server Error:', err);
+        res.status(400).json({ success: false, error: err.message });
+    }
+};
+
+// @desc    Disconnect wallet (nullify address)
+// @route   PUT /api/v1/auth/disconnect-wallet
+// @access  Private
+exports.disconnectWallet = async (req, res, next) => {
+    try {
+        const user = await User.findByIdAndUpdate(req.user.id, { walletAddress: null }, {
+            new: true,
+            runValidators: true
+        });
+
+        res.status(200).json({
+            success: true,
+            data: user
+        });
+    } catch (err) {
         res.status(400).json({ success: false, error: err.message });
     }
 };

@@ -17,7 +17,12 @@ A system merging **AI Originality Checks** (for uniqueness) with **Blockchain** 
 
 ---
 
-## 4. Algorithmic Deep-Dives (In-Depth Working)
+> [!IMPORTANT]
+> **Live Testnet Deployment**: The smart contracts are now deployed to the **Sepolia Testnet**. You no longer need to run a local Hardhat node. Follow the [Execution Guide](file:///C:/Users/Sai%20Krishna/.gemini/antigravity/brain/3f428e78-cc06-44be-963a-e30efffee394/execution_guide.md) for updated instructions.
+
+---
+
+## 📋 Prerequisites
 
 ### A. Image Originality (Perceptual Hashing - pHash)
 Unlike cryptographic hashes, pHash remains stable even if an image is resized or rotated.

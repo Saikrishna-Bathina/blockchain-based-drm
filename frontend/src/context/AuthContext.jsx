@@ -10,10 +10,9 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Constants for Localhost
-  const LOCAL_CHAIN_ID_HEX = "0x7A69"; // 31337
-  const LOCAL_CHAIN_ID_DEC = 31337;
-  const LOCAL_RPC_URL = "http://127.0.0.1:8545"; // Standard Hardhat RPC
+  // Constants for Sepolia (Replacing Localhost)
+  const SEPOLIA_CHAIN_ID_HEX = "0xaa36a7"; // 11155111
+  const SEPOLIA_RPC_URL = "https://ethereum-sepolia-rpc.publicnode.com";
 
   useEffect(() => {
     checkUserLoggedIn();
@@ -80,24 +79,24 @@ export const AuthProvider = ({ children }) => {
       try {
           await window.ethereum.request({
               method: 'wallet_switchEthereumChain',
-              params: [{ chainId: LOCAL_CHAIN_ID_HEX }],
+              params: [{ chainId: SEPOLIA_CHAIN_ID_HEX }],
           });
       } catch (switchError) {
-          // This error code indicates that the chain has not been added to MetaMask.
           if (switchError.code === 4902) {
               try {
                   await window.ethereum.request({
                       method: 'wallet_addEthereumChain',
                       params: [
                           {
-                              chainId: LOCAL_CHAIN_ID_HEX,
-                              chainName: 'Hardhat Local',
-                              rpcUrls: [LOCAL_RPC_URL],
+                              chainId: SEPOLIA_CHAIN_ID_HEX,
+                              chainName: 'Sepolia Testnet',
+                              rpcUrls: [SEPOLIA_RPC_URL],
                               nativeCurrency: {
-                                  name: "ETH",
-                                  symbol: "ETH", // 2-6 characters long
+                                  name: "Sepolia ETH",
+                                  symbol: "ETH",
                                   decimals: 18,
                               },
+                              blockExplorerUrls: ['https://sepolia.etherscan.io']
                           },
                       ],
                   });
@@ -151,12 +150,11 @@ export const AuthProvider = ({ children }) => {
 
       // 2. Check Network & Switch if needed
       const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-      if (currentChainId !== LOCAL_CHAIN_ID_HEX) {
+      if (currentChainId !== SEPOLIA_CHAIN_ID_HEX) {
           try {
               await switchNetwork();
           } catch (e) {
               console.warn("Network switch failed or rejected:", e);
-              // We continue, but warn. user might need to switch manually.
           }
       }
 
@@ -188,6 +186,15 @@ export const AuthProvider = ({ children }) => {
        throw error;
     }
   };
+  const disconnectWallet = async () => {
+    try {
+      await api.put('/auth/disconnect-wallet');
+      setUser(prev => ({ ...prev, walletAddress: null }));
+    } catch (error) {
+       console.error("Wallet disconnection failed:", error);
+       throw error;
+    }
+  };
 
   const logout = async () => {
     localStorage.removeItem('token');
@@ -206,6 +213,7 @@ export const AuthProvider = ({ children }) => {
       logout,
       provider, // Now checking window.ethereum
       connectWallet,
+      disconnectWallet,
       switchNetwork
     }}>
       {children}

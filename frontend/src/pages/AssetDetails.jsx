@@ -11,8 +11,8 @@ import { DRMRegistryABI } from "../abi/DRMRegistry"
 import { getLicensesForType } from "../lib/licenseConfig"
 
 // Placeholder - Replace with actual address
-const DRM_LICENSING_ADDRESS = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e";
-const DRM_REGISTRY_ADDRESS = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"; 
+const DRM_LICENSING_ADDRESS = "0x9f0ec638885dEb4973386554439AD81B9ec40fC8";
+const DRM_REGISTRY_ADDRESS = "0xA9A86c2D0C46BFB5f9daABFc8364D044E6A20512"; 
 
 const AssetDetails = () => {
     const { id } = useParams()
