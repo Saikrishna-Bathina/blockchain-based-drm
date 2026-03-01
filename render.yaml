@@ -48,3 +48,42 @@ services:
           name: drm-image-engine
           type: web
           property: host
+
+  # 5. Main Backend Service
+  - type: web
+    name: drm-backend
+    env: docker
+    dockerContext: backend
+    dockerfilePath: backend/Dockerfile
+    plan: free
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PRIVATE_KEY
+        sync: false
+      - key: PINATA_API_KEY
+        sync: false
+      - key: PINATA_SECRET_KEY
+        sync: false
+      - key: ENGINE_IMAGE_URL
+        fromService:
+          name: drm-image-engine
+          type: web
+          property: host
+      - key: ENGINE_VIDEO_URL
+        fromService:
+          name: drm-video-engine
+          type: web
+          property: host
+      - key: ENGINE_AUDIO_URL
+        fromService:
+          name: drm-audio-engine
+          type: web
+          property: host
+      - key: ENGINE_TEXT_URL
+        fromService:
+          name: drm-text-engine
+          type: web
+          property: host
