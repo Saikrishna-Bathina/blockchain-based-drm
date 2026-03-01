@@ -1,52 +1,98 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import api from '../lib/api';
+import { createAppKit, useAppKit, useAppKitAccount, useAppKitProvider } from '@reown/appkit/react';
+import { EthersAdapter } from '@reown/appkit-adapter-ethers';
+import { mainnet, sepolia } from '@reown/appkit/networks';
+
+// 1. Get ProjectId at https://cloud.reown.com
+const projectId = '8b588561e85200411f4a7da590564b60';
+
+// 2. Set networks - Include mainnet to avoid "Network Not Found" if wallet is on mainnet
+const networks = [mainnet, sepolia];
+
+// 3. Create a metadata object - optional
+const metadata = {
+  name: 'Blockchain DRM Delivery',
+  description: 'Secure Delivery System',
+  url: 'http://localhost:5173', // Updated to match development env
+  icons: ['https://avatars.githubusercontent.com/u/177284434']
+};
+
+// 4. Create the AppKit instance
+const modal = createAppKit({
+  adapters: [new EthersAdapter()],
+  networks,
+  defaultNetwork: sepolia, // Force Sepolia as default
+  metadata,
+  projectId,
+  features: {
+    analytics: true
+  }
+});
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Constants for Sepolia (Replacing Localhost)
-  const SEPOLIA_CHAIN_ID_HEX = "0xaa36a7"; // 11155111
-  const SEPOLIA_RPC_URL = "https://ethereum-sepolia-rpc.publicnode.com";
+  const [provider, setProvider] = useState(null);
+  const isConnectedRef = React.useRef(false);
+  const [chainId, setChainId] = useState(null);
 
   useEffect(() => {
     checkUserLoggedIn();
-    checkWalletConnection();
+    
+    // Subscribe to connection changes via modal
+    const unsubscribe = modal.subscribeAccount(async (state) => {
+        if (state.isConnected && state.address) {
+            const currentChainId = modal.getChainId();
+            console.log("AppKit ChainId (Account):", currentChainId, typeof currentChainId);
+            setChainId(Number(currentChainId));
+            
+            if (!isConnectedRef.current) {
+                console.log("Account connected via AppKit:", state.address);
+                isConnectedRef.current = true;
+            }
+            const walletProvider = modal.getWalletProvider();
+            if (walletProvider) {
+                setProvider(new ethers.BrowserProvider(walletProvider));
+            }
+        } else if (!state.isConnected && isConnectedRef.current) {
+            console.log("Account disconnected via AppKit");
+            setChainId(null);
+            setProvider(null);
+            isConnectedRef.current = false;
+        }
+    });
 
-    // Listen for account changes
-    if (window.ethereum) {
-        window.ethereum.on('accountsChanged', handleAccountsChanged);
-        window.ethereum.on('chainChanged', () => window.location.reload());
-    }
+    const unsubscribeNetwork = modal.subscribeNetwork((state) => {
+        if (state.caipNetwork) {
+            // Safe split in case ID is a number or formatted differently
+            const rawId = String(state.caipNetwork.id || "");
+            const id = rawId.includes(':') ? rawId.split(':').pop() : rawId;
+            console.log("AppKit Network Change:", id, typeof id);
+            setChainId(Number(id));
+            
+            // Re-sync provider on network change
+            const walletProvider = modal.getWalletProvider();
+            if (walletProvider) {
+                setProvider(new ethers.BrowserProvider(walletProvider));
+            }
+        }
+    });
 
     return () => {
-        if (window.ethereum) {
-            window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-        }
+        unsubscribe();
+        unsubscribeNetwork();
     };
   }, []);
-
-  const handleAccountsChanged = async (accounts) => {
-      if (accounts.length === 0) {
-          console.log("MetaMask Disconnected");
-          setProvider(null);
-          // Optional: Logout user from backend if wallet is required
-      } else {
-          console.log("Account changed:", accounts[0]);
-          setProvider(window.ethereum);
-      }
-  };
 
   const checkUserLoggedIn = async () => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        // Verify token with backend
         const { data } = await api.get('/auth/me');
         setUser(data.data);
       }
@@ -61,58 +107,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const checkWalletConnection = async () => {
-      if (window.ethereum) {
-          try {
-              const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-              if (accounts.length > 0) {
-                  setProvider(window.ethereum);
-              }
-          } catch (err) {
-              console.error("Failed to check wallet connection:", err);
-          }
-      }
-  };
-
-  const switchNetwork = async () => {
-      if (!window.ethereum) return;
-      try {
-          await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: SEPOLIA_CHAIN_ID_HEX }],
-          });
-      } catch (switchError) {
-          if (switchError.code === 4902) {
-              try {
-                  await window.ethereum.request({
-                      method: 'wallet_addEthereumChain',
-                      params: [
-                          {
-                              chainId: SEPOLIA_CHAIN_ID_HEX,
-                              chainName: 'Sepolia Testnet',
-                              rpcUrls: [SEPOLIA_RPC_URL],
-                              nativeCurrency: {
-                                  name: "Sepolia ETH",
-                                  symbol: "ETH",
-                                  decimals: 18,
-                              },
-                              blockExplorerUrls: ['https://sepolia.etherscan.io']
-                          },
-                      ],
-                  });
-              } catch (addError) {
-                  console.error("Failed to add network:", addError);
-                  throw addError;
-              }
-          } else {
-              console.error("Failed to switch network:", switchError);
-              throw switchError;
-          }
-      }
-  };
-
   const register = async (userData) => {
-    console.log("DEBUG: AuthContext register called with:", userData);
     try {
       const { data } = await api.post('/auth/register', userData);
       localStorage.setItem('token', data.token);
@@ -137,36 +132,78 @@ export const AuthProvider = ({ children }) => {
   };
 
   const connectWallet = async () => {
-    if (!window.ethereum) {
-      alert("Please install MetaMask!");
-      return;
-    }
-
     try {
-      // 1. Request Accounts
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const walletAddress = accounts[0];
-      setProvider(window.ethereum); // Ensure provider is set immediately
+      // 1. Open AppKit Modal
+      await modal.open();
 
-      // 2. Check Network & Switch if needed
-      const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-      if (currentChainId !== SEPOLIA_CHAIN_ID_HEX) {
+      // 2. Wait for connection (simple loop or state check)
+      // This is slightly manual because we are in a context rather than a hook
+      let account = modal.getAccount();
+      
+      // Wait up to 60s for user to connect
+      let attempts = 0;
+      while (!account.isConnected && attempts < 60) {
+          await new Promise(r => setTimeout(r, 1000));
+          account = modal.getAccount();
+          attempts++;
+      }
+
+      if (!account.isConnected) {
+          throw new Error("Wallet connection timed out or was rejected.");
+      }
+
+      // 3. Network Check & Switch (New)
+      let currentChainId = modal.getChainId();
+      console.log("ConnectWallet - Initial ChainId:", currentChainId, "Type:", typeof currentChainId);
+      
+      const targetId = Number(sepolia.id);
+      
+      if (Number(currentChainId) !== targetId) {
+          console.log(`Wrong network detected (${currentChainId}), switching to Sepolia (${targetId})...`);
           try {
-              await switchNetwork();
-          } catch (e) {
-              console.warn("Network switch failed or rejected:", e);
+              // Try AppKit switch
+              await modal.switchNetwork(targetId);
+              
+              // Fallback to direct request if needed
+              const walletProvider = modal.getWalletProvider();
+              if (walletProvider && Number(modal.getChainId()) !== targetId) {
+                  console.log("AppKit switch did not change ID, sending direct provider request...");
+                  await walletProvider.request({
+                      method: 'wallet_switchEthereumChain',
+                      params: [{ chainId: `0x${targetId.toString(16)}` }],
+                  }).catch(e => console.warn("Direct switch request failed/rejected:", e));
+              }
+              
+              // Wait for network switch to reflect in the state (up to 30s)
+              let switchAttempts = 0;
+              while (Number(modal.getChainId()) !== targetId && switchAttempts < 30) {
+                  await new Promise(r => setTimeout(r, 1000));
+                  switchAttempts++;
+                  console.log(`Wait Loop - Attempt: ${switchAttempts}, Current: ${modal.getChainId()}`);
+              }
+              
+              if (Number(modal.getChainId()) !== targetId) {
+                  throw new Error("Failed to switch network. Please switch to Sepolia manually in your MetaMask mobile app.");
+              }
+          } catch (switchError) {
+              console.error("Failed to switch network in connectWallet:", switchError);
+              throw new Error("Please switch your wallet network to Sepolia and try again.");
           }
       }
 
-      // 3. Ethers Provider for Signing
-      const browserProvider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await browserProvider.getSigner();
+      const walletAddress = account.address;
+      const walletProvider = modal.getWalletProvider(); 
+      if (!walletProvider) {
+          throw new Error("Wallet provider not available. Please try reconnecting.");
+      }
+      const browserProvider = new ethers.BrowserProvider(walletProvider);
+      
+      // Update local state immediately
+      setProvider(browserProvider);
+      isConnectedRef.current = true;
 
-      // DEBUG: Log Balance to be sure
-      const bal = await browserProvider.getBalance(walletAddress);
-      console.log("DEBUG: Wallet Connected");
-      console.log("DEBUG: Address:", walletAddress);
-      console.log("DEBUG: Balance:", ethers.formatEther(bal));
+      // 3. Ethers Provider for Signing
+      const signer = await browserProvider.getSigner();
 
       // 4. Sign Message & Backend Link
       const message = `Connect wallet to DRM System: ${Date.now()}`;
@@ -178,16 +215,19 @@ export const AuthProvider = ({ children }) => {
           message
       });
 
-      setUser(data.data);
-      return data.data;
+      const updatedUser = data.data;
+      setUser(updatedUser);
+      return { user: updatedUser, provider: browserProvider };
 
     } catch (error) {
        console.error("Wallet connection failed:", error);
        throw error;
     }
   };
+
   const disconnectWallet = async () => {
     try {
+      await modal.disconnect();
       await api.put('/auth/disconnect-wallet');
       setUser(prev => ({ ...prev, walletAddress: null }));
     } catch (error) {
@@ -211,10 +251,27 @@ export const AuthProvider = ({ children }) => {
       register,
       login,
       logout,
-      provider, // Now checking window.ethereum
+      provider,
+      chainId,
       connectWallet,
       disconnectWallet,
-      switchNetwork
+      switchNetwork: async () => {
+          try {
+              const targetId = 11155111;
+              console.log("UI Triggered Switch to Sepolia...");
+              await modal.switchNetwork(targetId);
+              
+              const walletProvider = modal.getWalletProvider();
+              if (walletProvider && Number(modal.getChainId()) !== targetId) {
+                  await walletProvider.request({
+                      method: 'wallet_switchEthereumChain',
+                      params: [{ chainId: `0x${targetId.toString(16)}` }],
+                  }).catch(e => console.warn("UI Direct switch failed:", e));
+              }
+          } catch (err) {
+              console.error("UI Switch failed:", err);
+          }
+      }
     }}>
       {children}
     </AuthContext.Provider>

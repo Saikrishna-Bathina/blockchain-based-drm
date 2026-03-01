@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@reown/appkit": "^1.8.18",
+    "@reown/appkit-adapter-ethers": "^1.8.18",
     "@web3auth/base": "^9.7.0",
     "@web3auth/ethereum-provider": "^9.7.0",
     "@web3auth/modal": "^10.13.1",

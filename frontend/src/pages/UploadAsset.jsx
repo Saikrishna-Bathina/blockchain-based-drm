@@ -19,7 +19,7 @@ const DRM_LICENSING_ADDRESS = "0x9f0ec638885dEb4973386554439AD81B9ec40fC8";
 
 const UploadAsset = () => {
   const navigate = useNavigate()
-  const { user, provider: authProvider } = useAuth()
+  const { user, provider: authProvider, chainId, connectWallet, switchNetwork } = useAuth()
   const [dragActive, setDragActive] = useState(false)
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
@@ -153,16 +153,35 @@ const UploadAsset = () => {
       try {
           setStatus("minting")
           
-          if (!authProvider) throw new Error("No wallet provider found. Please login.");
+          let activeProvider = authProvider;
+          let activeUser = user;
+
+          if (!activeProvider) {
+              const result = await connectWallet();
+              if (!result || !result.provider) {
+                  throw new Error("No wallet provider found. Please connect your wallet.");
+              }
+              activeProvider = result.provider;
+              activeUser = result.user;
+          }
           
-          const provider = new ethers.BrowserProvider(authProvider)
-          const signer = await provider.getSigner()
+          // Diagnostics for Ethers v6 + AppKit
+          const accounts = await activeProvider.listAccounts();
+          console.log("Ethers v6 listAccounts:", accounts.map(a => a.address));
+          
+          if (accounts.length === 0) {
+              console.log("No accounts found in signer, attempting forced discovery...");
+              await activeProvider.send("eth_requestAccounts", []);
+          }
+
+          const signer = await activeProvider.getSigner()
+          console.log("Signer obtained for address:", await signer.getAddress());
           
           if (!DRM_REGISTRY_ADDRESS) throw new Error("Contract Address is missing");
 
           const contract = new ethers.Contract(DRM_REGISTRY_ADDRESS, DRMRegistryABI, signer)
           
-          const signerAddress = await signer.getAddress();
+          const signerAddress = activeUser?.walletAddress || await signer.getAddress();
           
           if (!signerAddress) throw new Error("Wallet address missing.");
 
@@ -438,9 +457,21 @@ const UploadAsset = () => {
                   </CardContent>
              </Card>
 
-             {/* Action Button */}
+              {/* Action Button */}
              <div className="pt-2">
-                  {(status === 'idle' || status === 'uploaded') && (
+                  {user && (!chainId || Number(chainId) !== 11155111) ? (
+                      <Button 
+                        size="lg"
+                        className="w-full h-14 text-lg font-bold bg-amber-500 hover:bg-amber-400 text-black shadow-xl transition-all animate-pulse"
+                        onClick={() => {
+                            console.log("Switching network from UI. Current chainId:", chainId);
+                            switchNetwork();
+                        }}
+                      >
+                          <ShieldCheck className="w-5 h-5 mr-2" /> 
+                          {!chainId ? "Detecting Network..." : "Switch to Sepolia (Required)"}
+                      </Button>
+                  ) : (status === 'idle' || status === 'uploaded') && (
                       <Button 
                         size="lg"
                         className={cn(

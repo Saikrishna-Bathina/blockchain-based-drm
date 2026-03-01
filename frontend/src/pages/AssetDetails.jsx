@@ -9,6 +9,7 @@ import { ethers } from "ethers"
 import { DRMLicensingABI } from "../abi/DRMLicensing"
 import { DRMRegistryABI } from "../abi/DRMRegistry"
 import { getLicensesForType } from "../lib/licenseConfig"
+import SecurityWrapper from "../components/SecurityWrapper"
 
 // Placeholder - Replace with actual address
 const DRM_LICENSING_ADDRESS = "0x9f0ec638885dEb4973386554439AD81B9ec40fC8";
@@ -17,14 +18,13 @@ const DRM_REGISTRY_ADDRESS = "0xA9A86c2D0C46BFB5f9daABFc8364D044E6A20512";
 const AssetDetails = () => {
     const { id } = useParams()
     const navigate = useNavigate()
-    const { user } = useAuth()
+    const { user, provider, chainId, connectWallet, switchNetwork } = useAuth()
     const [asset, setAsset] = useState(null)
     const [loading, setLoading] = useState(true)
     const [hasLicense, setHasLicense] = useState(false)
     const [licenseLoading, setLicenseLoading] = useState(false)
     
     const [secureMode, setSecureMode] = useState(true)
-    const [isWindowBlurred, setIsWindowBlurred] = useState(false)
     const [streamToken, setStreamToken] = useState(null)
 
     // Player State
@@ -34,19 +34,6 @@ const AssetDetails = () => {
         fetchAsset()
     }, [id])
 
-    // Anti-Rip: Blur on Window Focus Loss
-    useEffect(() => {
-        const handleVisibilityChange = () => {
-             if (document.hidden) {
-                 setIsWindowBlurred(true)
-                 if (videoRef.current) videoRef.current.pause()
-             } else {
-                 setIsWindowBlurred(false)
-             }
-        }
-        document.addEventListener("visibilitychange", handleVisibilityChange)
-        return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
-    }, [])
 
     const fetchAsset = async () => {
         setLoading(true)
@@ -80,10 +67,9 @@ const AssetDetails = () => {
              }
          } catch (e) { console.error("Backend license check failed", e); }
 
-        // Fallback to Blockchain
-        if (window.ethereum && asset.blockchainId) {
+        // Fallback to Blockchain Provider (AppKit / MetaMask)
+        if (provider && asset.blockchainId) {
              try {
-                 const provider = new ethers.BrowserProvider(window.ethereum)
                  const contract = new ethers.Contract(DRM_LICENSING_ADDRESS, DRMLicensingABI, provider)
                  const hasAccess = await contract.checkLicense(user.walletAddress, asset.blockchainId)
                  setHasLicense(hasAccess)
@@ -94,7 +80,7 @@ const AssetDetails = () => {
                  if (asset.owner._id === user._id) setHasLicense(true)
              }
         } else {
-             if (asset.owner._id === user._id) setHasLicense(true)
+             if (asset.owner && user && asset.owner._id === user._id) setHasLicense(true)
         }
     }
 
@@ -120,12 +106,33 @@ const AssetDetails = () => {
     }
 
     const handlePurchase = async (type) => {
-        if (!window.ethereum) return alert("Please install MetaMask")
+        let activeProvider = provider;
+        let activeUser = user;
+
+        if (!activeProvider) {
+            try {
+                const result = await connectWallet();
+                if (!result || !result.provider) return;
+                activeProvider = result.provider;
+                activeUser = result.user;
+            } catch (e) { return; }
+        }
         
         setLicenseLoading(true)
         try {
-            const provider = new ethers.BrowserProvider(window.ethereum)
-            const signer = await provider.getSigner()
+            // If still no provider, we can't proceed
+            if (!activeProvider) throw new Error("Wallet not connected");
+
+            // Diagnostics for Ethers v6 + AppKit
+            const accounts = await activeProvider.listAccounts();
+            console.log("Ethers v6 listAccounts (Purchase):", accounts.map(a => a.address));
+            
+            if (accounts.length === 0) {
+                console.log("No accounts found in Purchase, forcing discovery...");
+                await activeProvider.send("eth_requestAccounts", []);
+            }
+
+            const signer = await activeProvider.getSigner()
             const contract = new ethers.Contract(DRM_LICENSING_ADDRESS, DRMLicensingABI, signer)
             
             const licenseKey = type;
@@ -137,8 +144,12 @@ const AssetDetails = () => {
             }
             
             // 1. Blockchain Transaction
+            // Convert to non-scientific decimal string for ethers.parseEther
+            const etherPrice = Number(price).toFixed(18).replace(/\.?0+$/, "");
+            console.log(`Purchasing license: ${licenseKey}, Price: ${price} -> ${etherPrice}`);
+            
             const tx = await contract.purchaseLicense(asset.blockchainId, licenseKey, {
-                value: ethers.parseEther(price)
+                value: ethers.parseEther(etherPrice)
             })
             await tx.wait()
             
@@ -163,14 +174,35 @@ const AssetDetails = () => {
     // ... (handleMint)
     const handleMint = async () => {
         if (!asset) return
-        if (!window.ethereum) return alert("Please install MetaMask")
+        
+        let activeProvider = provider;
+        let activeUser = user;
+
+        if (!activeProvider) {
+            try {
+                const result = await connectWallet();
+                if (!result || !result.provider) return;
+                activeProvider = result.provider;
+                activeUser = result.user;
+            } catch (e) { return; }
+        }
+
         try {
             if (!asset.originalityVerified) {
                 alert("Cannot mint duplicate content.")
                 return
             }
-            const provider = new ethers.BrowserProvider(window.ethereum)
-            const signer = await provider.getSigner()
+            if (!activeProvider) throw new Error("Wallet not connected");
+            // Diagnostics for Ethers v6 + AppKit
+            const accounts = await activeProvider.listAccounts();
+            console.log("Ethers v6 listAccounts (Mint):", accounts.map(a => a.address));
+            
+            if (accounts.length === 0) {
+                console.log("No accounts found in Mint, forcing discovery...");
+                await activeProvider.send("eth_requestAccounts", []);
+            }
+
+            const signer = await activeProvider.getSigner()
             
             const contract = new ethers.Contract(DRM_REGISTRY_ADDRESS, DRMRegistryABI, signer)
             if (!user?.walletAddress) throw new Error("User wallet address is missing.");
@@ -220,9 +252,14 @@ const AssetDetails = () => {
     }
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8 pb-12">
-            {/* Player Section */}
-            <div className={`aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-gray-800 relative group transition-all duration-500 ${isWindowBlurred ? 'blur-xl grayscale' : ''}`}>
+        <SecurityWrapper onSecurityAlert={(type) => {
+            if (type === 'focus_lost' && videoRef.current) {
+                videoRef.current.pause();
+            }
+        }}>
+            <div className="max-w-6xl mx-auto space-y-8 pb-12">
+                {/* Player Section */}
+                <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-gray-800 relative group transition-all duration-500">
                 
                 {hasLicense ? (
                     asset.contentType === 'video' ? (
@@ -274,7 +311,6 @@ const AssetDetails = () => {
                 {hasLicense && (
                     <div className="absolute top-4 right-4 flex gap-2">
                         {secureMode && <span className="bg-red-500/80 text-white text-xs px-2 py-1 rounded flex items-center gap-1"><ShieldCheck className="w-3 h-3"/> Secure Stream</span>}
-                         {isWindowBlurred && <span className="bg-yellow-500 text-black text-xs px-2 py-1 rounded font-bold">FOCUS LOST - BLURRED</span>}
                     </div>
                 )}
             </div>
@@ -329,15 +365,27 @@ const AssetDetails = () => {
                                     <span className="text-gray-500">Blockchain ID:</span>{' '}
                                     <span className="text-gray-300 font-mono">
                                         {asset.blockchainId || (
-                                            asset.owner._id === user?._id && asset.originalityVerified ? (
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="outline" 
-                                                    className="h-6 text-xs border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black ml-2"
-                                                    onClick={handleMint}
-                                                >
-                                                    <Coins className="w-3 h-3 mr-1" /> Mint Now
-                                                </Button>
+                                            (user?._id === asset.owner?._id && asset.originalityVerified) ? (
+                                                (!chainId || Number(chainId) !== 11155111) ? (
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="outline" 
+                                                        className="h-6 text-xs border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-black ml-2 animate-pulse"
+                                                        onClick={switchNetwork}
+                                                    >
+                                                        <ShieldCheck className="w-3 h-3 mr-1" /> 
+                                                        {!chainId ? "Detecting..." : "Switch to Sepolia"}
+                                                    </Button>
+                                                ) : (
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="outline" 
+                                                        className="h-6 text-xs border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black ml-2"
+                                                        onClick={handleMint}
+                                                    >
+                                                        <Coins className="w-3 h-3 mr-1" /> Mint Now
+                                                    </Button>
+                                                )
                                             ) : "Pending"
                                         )}
                                     </span>
@@ -356,7 +404,20 @@ const AssetDetails = () => {
                             <p className="text-sm text-gray-400">Select a license type to unlock this content via Blockchain.</p>
                             
                             <div className="space-y-3 pt-4">
-                                {getLicensesForType(asset.contentType || 'image').map((license) => {
+                                {user && (!chainId || Number(chainId) !== 11155111) ? (
+                                    <div className="space-y-4">
+                                        <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl text-amber-500 text-xs text-center border-dashed">
+                                            {!chainId ? "Detecting wallet network..." : "Wrong network detected. Please switch to Sepolia to purchase licenses."}
+                                        </div>
+                                        <Button 
+                                            className="w-full h-12 bg-amber-500 hover:bg-amber-400 text-black font-bold shadow-lg animate-pulse"
+                                            onClick={switchNetwork}
+                                        >
+                                            <ShieldCheck className="w-5 h-5 mr-2" /> 
+                                            {!chainId ? "Verify Network" : "Switch to Sepolia"}
+                                        </Button>
+                                    </div>
+                                ) : getLicensesForType(asset.contentType || 'image').map((license) => {
                                     const term = asset.licenseTerms?.[license.id];
                                     if (!term || !term.enabled) return null;
 
@@ -388,6 +449,7 @@ const AssetDetails = () => {
                 </div>
             </div>
         </div>
+    </SecurityWrapper>
     )
 }
 

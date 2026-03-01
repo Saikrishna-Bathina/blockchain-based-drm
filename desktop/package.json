@@ -1,0 +1,13 @@
+{
+    "name": "blockchain-drm-desktop",
+    "version": "1.0.0",
+    "description": "Secure Desktop App for DRM Content",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "dev": "electron ."
+    },
+    "devDependencies": {
+        "electron": "^31.0.0"
+    }
+}

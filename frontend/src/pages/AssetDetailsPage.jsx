@@ -1,8 +1,18 @@
 import { ShieldCheck, Flag } from "lucide-react"
 import { Button } from "../components/ui/Button"
 import { Card } from "../components/ui/Card"
+import SecurityWrapper from "../components/SecurityWrapper"
+import MovingWatermark from "../components/MovingWatermark"
 
 const AssetDetailsPage = () => {
+  // Mock asset data (should be fetched from state/API)
+  const asset = {
+    id: "67c0678d8a7b3c9d1e5f6",
+    title: "Q4 Financial Projections Draft",
+    userId: "usr_a7b3c9d1e5f6",
+    licenseId: "lic_f8e7d6c5b4a3"
+  };
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 animate-in fade-in">
         
@@ -10,38 +20,43 @@ const AssetDetailsPage = () => {
         <div className="xl:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-white">Protected Stream - Watermarked & Traceable</h2>
+                {window.electronAPI && (
+                  <span className="bg-green-500/10 text-green-500 px-3 py-1 rounded-full text-xs font-medium border border-green-500/20">
+                    Desktop Secure Mode Active
+                  </span>
+                )}
             </div>
 
-            <div 
-                className="relative aspect-video bg-black rounded-xl overflow-hidden group border border-brand-surface shadow-2xl"
-                onContextMenu={(e) => e.preventDefault()}
-            >
-                {/* Video Placeholder */}
-                <video 
-                    className="w-full h-full object-cover opacity-80"
-                    poster="https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=2874&auto=format&fit=crop"
-                    controlsList="nodownload"
+            <SecurityWrapper onSecurityAlert={(type) => console.log('Security Alert:', type)}>
+                <div 
+                    className="relative aspect-video bg-black rounded-xl overflow-hidden group border border-brand-surface shadow-2xl"
+                    onContextMenu={(e) => e.preventDefault()}
                 >
-                    <source src="#" type="video/mp4" />
-                    Your browser does not support the video tag.
-                </video>
+                    {/* Video Player */}
+                    <video 
+                        className="w-full h-full object-cover opacity-80"
+                        poster="https://images.unsplash.com/photo-1542204165-65bf26472b9b?q=80&w=2874&auto=format&fit=crop"
+                        controlsList="nodownload"
+                    >
+                        <source src="#" type="video/mp4" />
+                        Your browser does not support the video tag.
+                    </video>
 
-                {/* Play Button Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="h-16 w-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/20">
-                        <div className="h-0 w-0 border-t-[10px] border-t-transparent border-l-[18px] border-l-white border-b-[10px] border-b-transparent ml-1"></div>
+                    {/* Play Button Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="h-16 w-16 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/20">
+                            <div className="h-0 w-0 border-t-[10px] border-t-transparent border-l-[18px] border-l-white border-b-[10px] border-b-transparent ml-1"></div>
+                        </div>
                     </div>
-                </div>
 
-                {/* Simulated Watermark */}
-                <div className="absolute top-4 left-4 text-white/30 text-xs font-mono pointer-events-none select-none">
-                    User ID: usr_a7b3c9d1e5f6<br/>
-                    License ID: lic_f8e7d6c5b4a3
+                    {/* Dynamic Moving Watermark */}
+                    <MovingWatermark userId={asset.userId} licenseId={asset.licenseId} />
                 </div>
-            </div>
+            </SecurityWrapper>
 
             <div className="bg-brand-surface/10 border border-brand-surface p-4 rounded-lg text-center text-sm text-gray-400 select-none">
-                Right-click, download, and screenshot functionality are disabled for this protected asset.
+                This content is secured with Hardware-level encryption and dynamic watermarking. 
+                Attempts to capture or record this screen are logged and technically blocked.
             </div>
             
             <div className="flex items-center justify-center space-x-2 text-brand-primary text-sm">
