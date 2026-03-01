@@ -3,6 +3,7 @@ import { Upload, X, FileText, Image as ImageIcon, Video, Music, ShieldCheck, Shi
 import { Button } from "../components/ui/Button"
 import { Card, CardContent } from "../components/ui/Card"
 import axios from "axios"
+import api from "../lib/api"
 import { cn } from "../lib/utils"
 
 const VerificationPage = () => {
@@ -89,7 +90,7 @@ const VerificationPage = () => {
                 }
             }
             
-            const response = await axios.post('http://localhost:5000/api/v1/assets/check', formData, config)
+            const response = await api.post('/assets/check', formData, config)
             setResult(response.data.data)
         } catch (err) {
             console.error("Verification failed:", err)

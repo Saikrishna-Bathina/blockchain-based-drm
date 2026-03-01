@@ -243,8 +243,9 @@ const AssetDetails = () => {
     if (!asset) return <div className="p-20 text-center text-white">Asset Not Found</div>
 
     // Construct stream URL with token & watermark
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://drm-backend-a7g9.onrender.com/api/v1'
     let streamUrl = (hasLicense && streamToken)
-        ? `http://localhost:5000/api/v1/assets/${asset._id}/stream?token=${streamToken}`
+        ? `${baseUrl}/assets/${asset._id}/stream?token=${streamToken}`
         : null
     
     if (streamUrl && secureMode) {
