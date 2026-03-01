@@ -3,7 +3,7 @@ services:
   - type: web
     name: drm-audio-engine
     env: docker
-    dockerContext: .
+    dockerContext: originality-engine
     dockerfilePath: originality-engine/audioFiles/Dockerfile
     plan: free
     healthCheckPath: /health
@@ -12,7 +12,7 @@ services:
   - type: web
     name: drm-image-engine
     env: docker
-    dockerContext: .
+    dockerContext: originality-engine
     dockerfilePath: originality-engine/imageFiles/Dockerfile
     plan: free
     healthCheckPath: /health
@@ -21,7 +21,7 @@ services:
   - type: web
     name: drm-text-engine
     env: docker
-    dockerContext: .
+    dockerContext: originality-engine
     dockerfilePath: originality-engine/textFiles/Dockerfile
     plan: free
     healthCheckPath: /health
@@ -33,7 +33,7 @@ services:
   - type: web
     name: drm-video-engine
     env: docker
-    dockerContext: .
+    dockerContext: originality-engine
     dockerfilePath: originality-engine/videoFiles/Dockerfile
     plan: free
     healthCheckPath: /health
