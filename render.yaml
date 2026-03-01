@@ -56,7 +56,15 @@ services:
     dockerContext: backend
     dockerfilePath: backend/Dockerfile
     plan: free
+
     envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: PORT
+        value: 10000   # Render default port
+
+      # Secrets → add manually in Render dashboard
       - key: MONGO_URI
         sync: false
       - key: JWT_SECRET
@@ -67,21 +75,26 @@ services:
         sync: false
       - key: PINATA_SECRET_KEY
         sync: false
+
+      # Engine URLs (auto linked)
       - key: ENGINE_IMAGE_URL
         fromService:
           name: drm-image-engine
           type: web
           property: host
+
       - key: ENGINE_VIDEO_URL
         fromService:
           name: drm-video-engine
           type: web
           property: host
+
       - key: ENGINE_AUDIO_URL
         fromService:
           name: drm-audio-engine
           type: web
           property: host
+
       - key: ENGINE_TEXT_URL
         fromService:
           name: drm-text-engine
