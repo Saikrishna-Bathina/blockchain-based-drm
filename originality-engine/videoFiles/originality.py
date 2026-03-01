@@ -4,8 +4,8 @@ import requests
 from moviepy import VideoFileClip
 
 # Microservices Configuration
-AUDIO_SERVER_URL = "http://localhost:8080/check"
-IMAGE_SERVER_URL = "http://localhost:8081/check"
+AUDIO_SERVER_URL = os.environ.get("AUDIO_ENGINE_URL", "http://localhost:8080") + "/check"
+IMAGE_SERVER_URL = os.environ.get("IMAGE_ENGINE_URL", "http://localhost:8081") + "/check"
 
 class VideoOriginalityRequest:
     def __init__(self):
@@ -138,8 +138,8 @@ class VideoOriginalityRequest:
         Registers a video by extracting its audio and frames,
         and registering them with the respective microservices.
         """
-        AUDIO_REGISTER_URL = "http://localhost:8080/register"
-        IMAGE_REGISTER_URL = "http://localhost:8081/register"
+        AUDIO_REGISTER_URL = os.environ.get("AUDIO_ENGINE_URL", "http://localhost:8080") + "/register"
+        IMAGE_REGISTER_URL = os.environ.get("IMAGE_ENGINE_URL", "http://localhost:8081") + "/register"
 
         audio_path = None
         frame_paths = []

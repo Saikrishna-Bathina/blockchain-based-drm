@@ -34,7 +34,7 @@ except Exception as e:
     print(f"Warning: Semantic Engine (SBERT/Torch) failed to load: {e}")
     # Fallback or disable semantic features
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'audioFiles', 'fingerprints.db')
+DB_PATH = os.path.join(os.getcwd(), 'fingerprints.db')
 NUM_PERM = 128
 
 class TextOriginalityRequest:

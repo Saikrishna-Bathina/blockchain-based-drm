@@ -32,6 +32,7 @@ func main() {
 	// SERVER MODE: Start HTTP server
 	http.HandleFunc("/check", enableCORS(handleCheck))
 	http.HandleFunc("/register", enableCORS(handleRegister))
+	http.HandleFunc("/health", enableCORS(handleHealth))
 
 	fmt.Println("Server starting on :8080...")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
@@ -222,4 +223,9 @@ func handleRegister(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": fmt.Sprintf("Registered song %d", songID)})
+}
+
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "healthy", "service": "audio-originality-engine"})
 }

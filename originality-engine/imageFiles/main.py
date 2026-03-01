@@ -14,6 +14,10 @@ UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "healthy", "service": "image-originality-engine"}), 200
+
 @app.route('/check', methods=['POST'])
 def check_image():
     if 'file' not in request.files:
@@ -77,9 +81,9 @@ def register_image():
             os.remove(filepath)
 
 def start_server():
-    print("Starting Image Originality Server on port 8081...")
-    # Using 8081 to avoid conflict if audio server is running on 8080
-    app.run(host='0.0.0.0', port=8081, debug=True)
+    port = int(os.environ.get('PORT', 8081))
+    print(f"Starting Image Originality Server on port {port}...")
+    app.run(host='0.0.0.0', port=port, debug=False)
 
 def main():
     parser = argparse.ArgumentParser(description="Image Originality Engine CLI & Server")

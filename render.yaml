@@ -1,0 +1,48 @@
+services:
+  # 1. Audio Originality Service
+  - type: web
+    name: drm-audio-engine
+    env: docker
+    dockerContext: .
+    dockerfilePath: originality-engine/audioFiles/Dockerfile
+    plan: free
+    healthCheckPath: /health
+
+  # 2. Image Originality Service
+  - type: web
+    name: drm-image-engine
+    env: docker
+    dockerContext: .
+    dockerfilePath: originality-engine/imageFiles/Dockerfile
+    plan: free
+    healthCheckPath: /health
+
+  # 3. Text Originality Service
+  - type: web
+    name: drm-text-engine
+    env: docker
+    dockerContext: .
+    dockerfilePath: originality-engine/textFiles/Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENABLE_SEMANTIC_CHECK
+        value: "true"
+
+  # 4. Video Originality Service
+  - type: web
+    name: drm-video-engine
+    env: docker
+    dockerContext: .
+    dockerfilePath: originality-engine/videoFiles/Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: AUDIO_ENGINE_URL
+        fromService:
+          name: drm-audio-engine
+          type: web
+      - key: IMAGE_ENGINE_URL
+        fromService:
+          name: drm-image-engine
+          type: web

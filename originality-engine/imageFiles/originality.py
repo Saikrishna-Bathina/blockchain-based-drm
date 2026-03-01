@@ -4,7 +4,7 @@ import sqlite3
 import os
 import uuid
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'audioFiles', 'fingerprints.db')
+DB_PATH = os.path.join(os.getcwd(), 'fingerprints.db')
 
 class ImageOriginalityRequest:
     def __init__(self, db_path=DB_PATH):

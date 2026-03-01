@@ -116,6 +116,6 @@ def check_text():
         return jsonify({"error": "File type not allowed"}), 400
 
 if __name__ == '__main__':
-    # Run on port 5002 to avoid conflicts
-    print("Starting server on port 5002...")
-    app.run(host='0.0.0.0', port=5002, debug=True, use_reloader=False)
+    port = int(os.environ.get('PORT', 5002))
+    print(f"Starting server on port {port}...")
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)

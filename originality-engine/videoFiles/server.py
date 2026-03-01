@@ -103,6 +103,6 @@ def register_video_endpoint():
         return jsonify({"error": "File type not allowed"}), 400
 
 if __name__ == '__main__':
-    # Run on port 5003 for video
-    print("Starting video server on port 5003...")
-    app.run(host='0.0.0.0', port=5003, debug=True, use_reloader=False)
+    port = int(os.environ.get('PORT', 5003))
+    print(f"Starting video server on port {port}...")
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
