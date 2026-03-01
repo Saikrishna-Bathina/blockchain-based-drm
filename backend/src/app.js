@@ -10,9 +10,9 @@ const licenseRoutes = require('./routes/license');
 
 const app = express();
 
-// Enable CORS first
+// Enable CORS
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: '*', // Allow all for production deployment
     credentials: true
 }));
 
@@ -25,7 +25,7 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-            "frame-ancestors": ["'self'", "http://localhost:5173"],
+            "frame-ancestors": ["'self'"],
         },
     },
 }));
