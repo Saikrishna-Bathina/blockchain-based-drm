@@ -2,14 +2,29 @@ const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
 
-// Configuration for Originality Engine URLs (Assuming running locally on specific ports)
-// Video: 5003, Text: 5002, Image: 8081, Audio: 8080
-const ENGINES = {
+const ENGINES_RAW = {
     video: process.env.ENGINE_VIDEO_URL || 'http://localhost:5003',
     image: process.env.ENGINE_IMAGE_URL || 'http://localhost:8081',
     text: process.env.ENGINE_TEXT_URL || 'http://localhost:5002',
     audio: process.env.ENGINE_AUDIO_URL || 'http://localhost:8080'
 };
+
+const ENGINES = {};
+Object.keys(ENGINES_RAW).forEach(key => {
+    let url = ENGINES_RAW[key];
+    if (!url.startsWith('http')) url = 'http://' + url;
+
+    // Render internal hostname fix: if no dots, it's a service name, add .onrender.com
+    try {
+        const urlObj = new URL(url);
+        if (urlObj.hostname && !urlObj.hostname.includes('.') && urlObj.hostname !== 'localhost') {
+            url = url.replace(urlObj.hostname, `${urlObj.hostname}.onrender.com`);
+        }
+    } catch (e) {
+        console.warn(`[OriginalityService] Failed to parse URL: ${url}`);
+    }
+    ENGINES[key] = url;
+});
 
 exports.checkOriginality = async (filePath, contentType) => {
     try {
