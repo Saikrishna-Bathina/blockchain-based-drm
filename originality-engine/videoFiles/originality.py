@@ -6,10 +6,18 @@ from moviepy import VideoFileClip
 # Microservices Configuration
 _audio_base = os.environ.get("AUDIO_ENGINE_URL", "http://localhost:8080")
 if not _audio_base.startswith("http"): _audio_base = "http://" + _audio_base
+# Render internal hostnames specifically: if no dot in hostname, it's a service name, add .onrender.com for cluster resolution
+from urllib.parse import urlparse
+_a_parsed = urlparse(_audio_base)
+if _a_parsed.hostname and '.' not in _a_parsed.hostname and 'localhost' not in _a_parsed.hostname:
+    _audio_base = _audio_base.replace(_a_parsed.hostname, f"{_a_parsed.hostname}.onrender.com")
 AUDIO_SERVER_URL = _audio_base + "/check"
 
 _image_base = os.environ.get("IMAGE_ENGINE_URL", "http://localhost:8081")
 if not _image_base.startswith("http"): _image_base = "http://" + _image_base
+_i_parsed = urlparse(_image_base)
+if _i_parsed.hostname and '.' not in _i_parsed.hostname and 'localhost' not in _i_parsed.hostname:
+    _image_base = _image_base.replace(_i_parsed.hostname, f"{_i_parsed.hostname}.onrender.com")
 IMAGE_SERVER_URL = _image_base + "/check"
 
 class VideoOriginalityRequest:
@@ -145,10 +153,17 @@ class VideoOriginalityRequest:
         """
         audio_base = os.environ.get("AUDIO_ENGINE_URL", "http://localhost:8080")
         if not audio_base.startswith("http"): audio_base = "http://" + audio_base
+        from urllib.parse import urlparse
+        _a_parsed = urlparse(audio_base)
+        if _a_parsed.hostname and '.' not in _a_parsed.hostname and 'localhost' not in _a_parsed.hostname:
+            audio_base = audio_base.replace(_a_parsed.hostname, f"{_a_parsed.hostname}.onrender.com")
         AUDIO_REGISTER_URL = audio_base + "/register"
 
         image_base = os.environ.get("IMAGE_ENGINE_URL", "http://localhost:8081")
         if not image_base.startswith("http"): image_base = "http://" + image_base
+        _i_parsed = urlparse(image_base)
+        if _i_parsed.hostname and '.' not in _i_parsed.hostname and 'localhost' not in _i_parsed.hostname:
+            image_base = image_base.replace(_i_parsed.hostname, f"{_i_parsed.hostname}.onrender.com")
         IMAGE_REGISTER_URL = image_base + "/register"
 
         audio_path = None
