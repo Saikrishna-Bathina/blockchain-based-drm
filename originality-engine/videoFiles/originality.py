@@ -4,8 +4,13 @@ import requests
 from moviepy import VideoFileClip
 
 # Microservices Configuration
-AUDIO_SERVER_URL = os.environ.get("AUDIO_ENGINE_URL", "http://localhost:8080") + "/check"
-IMAGE_SERVER_URL = os.environ.get("IMAGE_ENGINE_URL", "http://localhost:8081") + "/check"
+_audio_base = os.environ.get("AUDIO_ENGINE_URL", "http://localhost:8080")
+if not _audio_base.startswith("http"): _audio_base = "http://" + _audio_base
+AUDIO_SERVER_URL = _audio_base + "/check"
+
+_image_base = os.environ.get("IMAGE_ENGINE_URL", "http://localhost:8081")
+if not _image_base.startswith("http"): _image_base = "http://" + _image_base
+IMAGE_SERVER_URL = _image_base + "/check"
 
 class VideoOriginalityRequest:
     def __init__(self):
@@ -138,8 +143,13 @@ class VideoOriginalityRequest:
         Registers a video by extracting its audio and frames,
         and registering them with the respective microservices.
         """
-        AUDIO_REGISTER_URL = os.environ.get("AUDIO_ENGINE_URL", "http://localhost:8080") + "/register"
-        IMAGE_REGISTER_URL = os.environ.get("IMAGE_ENGINE_URL", "http://localhost:8081") + "/register"
+        audio_base = os.environ.get("AUDIO_ENGINE_URL", "http://localhost:8080")
+        if not audio_base.startswith("http"): audio_base = "http://" + audio_base
+        AUDIO_REGISTER_URL = audio_base + "/register"
+
+        image_base = os.environ.get("IMAGE_ENGINE_URL", "http://localhost:8081")
+        if not image_base.startswith("http"): image_base = "http://" + image_base
+        IMAGE_REGISTER_URL = image_base + "/register"
 
         audio_path = None
         frame_paths = []
