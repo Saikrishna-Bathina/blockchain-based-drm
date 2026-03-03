@@ -110,8 +110,9 @@ exports.registerAsset = async (filePath, contentType, assetId) => {
         // audio_id logic handled here if assetId is just a string
         let audio_id = assetId;
         if (contentType === 'audio') {
-            const zlib = require('zlib');
-            audio_id = zlib.crc32(assetId) & 0xffffffff;
+            const crypto = require('crypto');
+            const hash = crypto.createHash('sha256').update(assetId).digest();
+            audio_id = hash.readUInt32BE(0);
         }
 
         form.append('content_id', assetId);

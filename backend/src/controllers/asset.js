@@ -5,7 +5,7 @@ const { uploadToIPFS } = require('../services/ipfsService');
 const fs = require('fs');
 const path = require('path');
 
-const zlib = require('zlib');
+const crypto = require('crypto');
 
 // @desc    Upload new asset
 // @route   POST /api/v1/assets/upload
@@ -36,8 +36,9 @@ exports.uploadAsset = async (req, res, next) => {
             originalityVerified: false
         });
 
-        // Generate CRC32 hash for Audio Engine ID
-        const hash = zlib.crc32(asset._id.toString()) & 0xffffffff;
+        // Generate a 32-bit integer hash for Audio Engine ID using crypto
+        const hashStr = asset._id.toString();
+        const hash = crypto.createHash('sha256').update(hashStr).digest().readUInt32BE(0);
         asset.originalityHash = hash;
         await asset.save();
 

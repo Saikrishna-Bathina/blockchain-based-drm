@@ -23,7 +23,8 @@ function createWindow() {
 
     // Load the frontend (Vite dev server or production build)
     // For development, we use localhost:5173 (standard Vite port)
-    const startUrl = process.env.ELECTRON_START_URL || 'http://localhost:5173';
+    const productionUrl = 'https://blockchain-based-drm.onrender.com';
+    const startUrl = process.env.ELECTRON_START_URL || (app.isPackaged ? productionUrl : 'http://localhost:5173');
     mainWindow.loadURL(startUrl);
 
     // Disable Default Context Menu
