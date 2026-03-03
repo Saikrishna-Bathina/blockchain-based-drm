@@ -77,7 +77,7 @@ const AssetRow = ({ asset }) => {
 }
 
 const MyAssets = () => {
-    const { user } = useAuth()
+    const { user, loading: authLoading } = useAuth()
     const [assets, setAssets] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
@@ -89,12 +89,16 @@ const MyAssets = () => {
 
     useEffect(() => {
         if (user) fetchMyAssets()
-    }, [user])
+        else if (!user && !authLoading) {
+            // If we've finished checking and there's no user, stop loading state
+            setLoading(false)
+        }
+    }, [user, authLoading])
 
     const fetchMyAssets = async () => {
         try {
             const { data } = await api.get(`/assets?owner=${user._id}&limit=100&showAll=true`)
-            setAssets(data.data)
+            setAssets(Array.isArray(data.data) ? data.data : [])
         } catch (error) {
             console.error("Failed to fetch assets", error)
         } finally {
@@ -103,9 +107,15 @@ const MyAssets = () => {
     }
 
     const filteredAssets = assets.filter(asset => {
-        const matchesSearch = asset.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            asset.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            asset.blockchainId?.toLowerCase().includes(searchTerm.toLowerCase())
+        if (!asset) return false;
+        const title = (asset.title || "").toLowerCase();
+        const description = (asset.description || "").toLowerCase();
+        const bid = (asset.blockchainId || "").toLowerCase();
+        const search = searchTerm.toLowerCase();
+
+        const matchesSearch = title.includes(search) ||
+                            description.includes(search) ||
+                            bid.includes(search)
         
         const matchesType = filters.type === 'all' || asset.contentType === filters.type
         

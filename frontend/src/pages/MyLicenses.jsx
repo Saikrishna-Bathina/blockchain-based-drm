@@ -86,19 +86,22 @@ const LicenseRow = ({ license }) => {
 }
 
 const MyLicenses = () => {
-    const { user } = useAuth()
+    const { user, loading: authLoading } = useAuth()
     const [licenses, setLicenses] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
 
     useEffect(() => {
         if (user) fetchMyLicenses()
-    }, [user])
+        else if (!user && !authLoading) {
+            setLoading(false)
+        }
+    }, [user, authLoading])
 
     const fetchMyLicenses = async () => {
         try {
             const { data } = await api.get('/licenses/me')
-            setLicenses(data.data)
+            setLicenses(Array.isArray(data.data) ? data.data : [])
         } catch (error) {
             console.error("Failed to fetch licenses", error)
         } finally {
@@ -107,9 +110,12 @@ const MyLicenses = () => {
     }
 
     const filteredLicenses = licenses.filter(license => {
-        if (!license.asset) return false;
-        return license.asset.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               license.licenseType.toLowerCase().includes(searchTerm.toLowerCase())
+        if (!license || !license.asset) return false;
+        const title = (license.asset.title || "").toLowerCase();
+        const type = (license.licenseType || "").toLowerCase();
+        const search = searchTerm.toLowerCase();
+
+        return title.includes(search) || type.includes(search)
     })
 
     if (loading) return (
