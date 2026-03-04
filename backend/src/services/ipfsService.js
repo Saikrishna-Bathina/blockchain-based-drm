@@ -41,3 +41,18 @@ exports.uploadToIPFS = async (filePath) => {
         throw error;
     }
 };
+
+exports.getIPFSStream = async (cid) => {
+    try {
+        // Use a public gateway to fetch the file
+        const url = `https://gateway.pinata.cloud/ipfs/${cid}`;
+        const response = await axios.get(url, {
+            responseType: 'stream',
+            timeout: 30000 // 30s timeout
+        });
+        return response.data;
+    } catch (error) {
+        console.error("IPFS Stream Error:", error.message);
+        throw new Error("Could not fetch file from IPFS");
+    }
+};

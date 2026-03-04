@@ -134,57 +134,18 @@ const Dashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            // 1. Fetch Assets
-            const { data } = await api.get(`/assets?limit=100&showAll=true`)
-            const allAssets = data.data
-            
-            const total = allAssets.length
-            const original = allAssets.filter(a => a.originalityVerified).length
-            const pending = allAssets.filter(a => !a.blockchainId).length
+            setLoading(true)
+            const { data } = await api.get('/dashboard/stats')
+            const dashboardData = data.data
 
-            // Initial State Update with Asset Stats
-            setStats(prev => ({
-                ...prev,
-                total,
-                original,
-                pending
-            }))
+            setStats({
+                total: dashboardData.totalAssets,
+                minted: dashboardData.mintedAssets,
+                totalSold: dashboardData.totalLicenses,
+                totalRevenue: dashboardData.totalRevenue
+            })
             
-            // 4. Fetch Recent Notifications
-            try {
-                const notifyRes = await api.get('/notifications');
-                setRecentActivity(notifyRes.data.data);
-            } catch (notifyErr) {
-                 console.warn("Notifications fetch failed", notifyErr);
-                 setRecentActivity(allAssets.slice(0, 5)); // Fallback to assets
-            }
-            
-
-            // 2. Fetch Live Blockchain Analytics
-            try {
-                const bcRes = await api.get('/licenses/blockchain-stats');
-                const bcData = bcRes.data.data;
-
-                setStats(prev => ({ 
-                    ...prev,
-                    minted: bcData.blockchain.totalMinted,
-                    totalSold: bcData.blockchain.totalSales,
-                    // We can also use bcData.database stats if preferred
-                }))
-            } catch (bcErr) {
-                console.warn("Failed to fetch live blockchain stats:", bcErr);
-            }
-            
-            // 3. (Optional) Fetch Local Detailed Revenue
-            try {
-                const licenseStatsRes = await api.get('/licenses/stats');
-                setStats(prev => ({ 
-                    ...prev,
-                    totalRevenue: licenseStatsRes.data.data.totalRevenue
-                }))
-            } catch (revErr) {
-                 console.warn("Revenue stats fetch failed", revErr);
-            }
+            setRecentActivity(dashboardData.recentActivity)
             
         } catch (error) {
             console.error("Dashboard fetch error", error)

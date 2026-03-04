@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { ethers } = require('ethers');
 const { getDecipher } = require('../services/encryptionService');
+const { getIPFSStream } = require('../services/ipfsService');
 
 // CONSTANTS
 const DRM_LICENSING_ADDRESS = process.env.DRM_LICENSING_ADDRESS || "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e";
@@ -34,6 +35,37 @@ exports.getStreamToken = async (req, res, next) => {
                 if (!license.expiryTime || new Date() < new Date(license.expiryTime)) {
                     hasAccess = true;
                 }
+            }
+        }
+
+        // Blockchain Fallback
+        if (!hasAccess && asset.blockchainId && asset.blockchainId !== "PENDING") {
+            try {
+                const User = require('../models/User');
+                const user = await User.findById(req.user.id);
+
+                if (user && user.walletAddress) {
+                    const provider = new ethers.JsonRpcProvider(RPC_URL);
+                    const contract = new ethers.Contract(DRM_LICENSING_ADDRESS, DRMLicensingABI, provider);
+
+                    const onChainAccess = await contract.checkLicense(user.walletAddress, asset.blockchainId);
+                    if (onChainAccess) {
+                        hasAccess = true;
+
+                        // Proactively sync to DB for next time (Optional but good)
+                        try {
+                            await License.create({
+                                user: req.user.id,
+                                asset: asset._id,
+                                transactionHash: `fallback-${Date.now()}`, // Placeholder hash
+                                licenseType: 'license1', // Default or detected?
+                                active: true
+                            });
+                        } catch (syncErr) { console.error("Auto-sync failed:", syncErr.message); }
+                    }
+                }
+            } catch (blockchainErr) {
+                console.error("Blockchain Fallback Check Failed:", blockchainErr.message);
             }
         }
 
@@ -90,22 +122,28 @@ exports.streamAsset = async (req, res, next) => {
         let filePath = asset.storagePath;
         if (!filePath.endsWith('.enc')) filePath += '.enc';
 
-        if (!fs.existsSync(filePath)) {
-            return res.status(404).json({ success: false, error: 'Secured file not found on server' });
-        }
+        // Convert to absolute path for reliable existence check
+        const absolutePath = path.isAbsolute(filePath) ? filePath : path.join(__dirname, '../../', filePath);
 
-        const stat = fs.statSync(filePath);
-        const fileSize = stat.size; // This is the encrypted size
-        const range = req.headers.range;
+        let fileStream;
+        if (fs.existsSync(absolutePath)) {
+            console.log(`Streaming local file: ${absolutePath}`);
+            fileStream = fs.createReadStream(absolutePath);
+        } else if (asset.cid) {
+            console.log(`Local file missing at ${absolutePath}, falling back to IPFS for CID: ${asset.cid}`);
+            try {
+                fileStream = await getIPFSStream(asset.cid);
+            } catch (ipfsErr) {
+                return res.status(404).json({ success: false, error: 'File not found locally or on IPFS' });
+            }
+        } else {
+            return res.status(404).json({ success: false, error: 'Secured file not found on server and no IPFS fallback available' });
+        }
 
         const ext = path.extname(asset.originalFileName).toLowerCase();
         let contentType = asset.contentType === 'video' ? 'video/mp4' :
             asset.contentType === 'audio' ? 'audio/mpeg' :
                 asset.contentType === 'image' ? 'image/jpeg' : 'application/octet-stream';
-
-        // NOTE: Standard range streaming with decryption is complex. 
-        // For simplicity, we stream the FULL decrypted file for most types.
-        // For production, one would typically use HLS with encrypted segments.
 
         const head = {
             'Content-Type': contentType,
@@ -115,7 +153,6 @@ exports.streamAsset = async (req, res, next) => {
 
         // Decipher Piping
         const decipher = getDecipher(asset.encryptionKey, asset.iv);
-        const fileStream = fs.createReadStream(filePath);
 
         // Watermark logic (Video Only)
         const useWatermark = req.query.watermark === 'true' && asset.contentType === 'video';

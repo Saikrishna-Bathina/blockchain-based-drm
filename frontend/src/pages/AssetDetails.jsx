@@ -23,6 +23,7 @@ const AssetDetails = () => {
     const [loading, setLoading] = useState(true)
     const [hasLicense, setHasLicense] = useState(false)
     const [licenseLoading, setLicenseLoading] = useState(false)
+    const [tokenLoading, setTokenLoading] = useState(false)
     
     const [secureMode, setSecureMode] = useState(true)
     const [streamToken, setStreamToken] = useState(null)
@@ -97,11 +98,15 @@ const AssetDetails = () => {
     }, [hasLicense])
 
     const fetchStreamToken = async () => {
+        setTokenLoading(true)
         try {
             const { data } = await api.get(`/assets/${asset._id}/token`)
             setStreamToken(data.token)
         } catch (error) {
             console.error("Failed to fetch stream token", error)
+            // If it fails, maybe retry or show a message
+        } finally {
+            setTokenLoading(false)
         }
     }
 
@@ -263,7 +268,18 @@ const AssetDetails = () => {
                 <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-gray-800 relative group transition-all duration-500">
                 
                 {hasLicense ? (
-                    asset.contentType === 'video' ? (
+                    tokenLoading ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-20">
+                            <Loader2 className="h-12 w-12 text-brand-primary animate-spin mb-4" />
+                            <p className="text-gray-300">Decrypting Secure Stream...</p>
+                        </div>
+                    ) : !streamToken ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-20">
+                            <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+                            <p className="text-gray-300">Syncing License... Please wait.</p>
+                            <Button variant="link" onClick={fetchStreamToken} className="mt-2 text-brand-primary">Retry Loading</Button>
+                        </div>
+                    ) : asset.contentType === 'video' ? (
                         <>
                             <video 
                                 ref={videoRef}
@@ -296,7 +312,7 @@ const AssetDetails = () => {
                          </div>
                     ) : (
                          <div className="w-full h-full flex items-center justify-center relative select-none" onContextMenu={(e) => e.preventDefault()}>
-                             <img src={streamUrl || "placeholder.png"} alt="Content" className="max-h-full pointer-events-none" />
+                             <img src={streamUrl} alt="Content" className="max-h-full pointer-events-none" />
                              <div className="absolute inset-0 z-20 bg-transparent" />
                          </div>
                     )
