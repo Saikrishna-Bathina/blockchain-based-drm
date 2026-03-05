@@ -7,7 +7,7 @@ RUN go mod tidy && go build -o audio_server .
 
 # Stage 2: Final
 FROM alpine:latest
-RUN apk add --no-cache ca-certificates libc6-compat
+RUN apk add --no-cache ca-certificates libc6-compat ffmpeg
 WORKDIR /app
 COPY --from=builder /app/audio_server .
 COPY audioFiles/schema.sql .
