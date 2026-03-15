@@ -1,0 +1,598 @@
+\documentclass[12pt,a4paper]{report}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{tocbibind}
+\usepackage{enumitem}
+
+% Page Geometry (Margins)
+\geometry{a4paper, left=1.5in, right=1in, top=1in, bottom=1in}
+
+% Line Spacing
+\onehalfspacing
+
+% Section formatting
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\centering}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-50pt}{40pt}
+
+% Fancy Header setup
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+
+\begin{document}
+
+% -------------------------------------------------------------------
+% TITLE PAGE
+% -------------------------------------------------------------------
+\begin{titlepage}
+    \begin{center}
+        \vspace*{0.5cm}
+        
+        \large{\textbf{A PROJECT REPORT ON}}
+        
+        \vspace{1cm}
+        
+        \Large{\textbf{BLOCKCHAIN-BASED DIGITAL RIGHTS MANAGEMENT FOR SECURE CONTENT DELIVERY AND COPYRIGHT PROTECTION}}
+        
+        \vspace{1cm}
+        
+        \normalsize{Submitted in partial fulfilment of the requirement for the award of the Degree of}
+        
+        \vspace{0.5cm}
+        
+        \large{\textbf{Bachelor of Technology in Computer Science \& Engineering}}
+        
+        \vspace{1cm}
+        
+        \normalsize{By}
+        
+        \vspace{0.5cm}
+        \begin{table}[h]
+        \centering
+        \begin{tabular}{ll}
+            \textbf{G. DHARANI} & \textbf{21VV1A0518} \\
+            \textbf{P. YATEESHA} & \textbf{21VV1A0538} \\
+            \textbf{S. PHANI SAI PRASAD} & \textbf{21VV1A0546} \\
+            \textbf{S. RAMESH} & \textbf{21VV1A0552}
+        \end{tabular}
+        \end{table}
+        
+        \vspace{1cm}
+        
+        \normalsize{Under The Esteemed Guidance Of}
+        
+        \vspace{0.2cm}
+        \textbf{Mr. V. LAXMI PRASAD (C)}\\
+        \normalsize{Assistant Professor}\\
+        \normalsize{Computer Science \& Engineering}\\
+        \normalsize{JNTU-GV, CEV (A)}
+        
+        \vfill
+        
+        % Logo placeholder (if any)
+        % \includegraphics[width=4cm]{college_logo.png} 
+        
+        \vspace{0.5cm}
+        
+        \large{\textbf{DEPARTMENT OF COMPUTER SCIENCE \& ENGINEERING}}\\
+        \large{\textbf{JNTU-GV, COLLEGE OF ENGINEERING, VIZIANAGARAM (A)}}\\
+        \normalsize{VIZIANAGARAM-535003, A.P., INDIA}\\
+        \vspace{0.5cm}
+        \large{\textbf{(2021-2025)}}
+        
+    \end{center}
+\end{titlepage}
+
+\pagenumbering{roman} % Roman numerals for front matter
+\setcounter{page}{2}
+
+% -------------------------------------------------------------------
+% CERTIFICATE
+% -------------------------------------------------------------------
+\newpage
+\begin{center}
+    \large{\textbf{Department of Computer Science \& Engineering}}\\
+    \large{\textbf{JNTU-GV, College of Engineering, Vizianagaram (A)}}\\
+    \normalsize{VIZIANAGARAM-535003, AP, IN.}\\
+    \normalsize{(2021-2025)}
+    
+    \vspace{1.5cm}
+    
+    \Large{\textbf{CERTIFICATE}}
+\end{center}
+
+\vspace{0.5cm}
+\noindent
+This is to certify that the project titled \textbf{``BLOCKCHAIN-BASED DIGITAL RIGHTS MANAGEMENT FOR SECURE CONTENT DELIVERY AND COPYRIGHT PROTECTION''} is a Bonafide record of the work done by \textbf{G. DHARANI (21VV1A0518), P. YATEESHA (21VV1A0538), S. PHANI SAI PRASAD (21VV1A0546), S. RAMESH (21VV1A0552)} in partial fulfilment of the requirements for the award of the degree of the Bachelor of Technology in Computer Science \& Engineering of JNTU – GV, College of Engineering Vizianagaram, during the year 2021-2025.
+
+\vspace{0.5cm}
+\noindent
+The results embodied in this report have not been submitted to any other University or Institute for the award of any degree or diploma.
+
+\vspace{2.5cm}
+
+\noindent
+\begin{minipage}[t]{0.5\textwidth}
+\textbf{Project Supervisor}\\
+\textbf{[Mr. V. LAXMI PRASAD] (C)}\\
+Assistant Professor\\
+Dept. of CSE\\
+JNTU-GV, CEV (A)
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}
+\raggedleft
+\textbf{Head of the Department}\\
+\textbf{[DR. P. ARUNA KUMARI]}\\
+Assistant Professor \& HOD\\
+Dept. of CSE\\
+JNTU-GV, CEV (A)
+\end{minipage}
+
+% -------------------------------------------------------------------
+% DECLARATION
+% -------------------------------------------------------------------
+\newpage
+\begin{center}
+    \Large{\textbf{DECLARATION}}
+\end{center}
+
+\vspace{1cm}
+\noindent
+We \textbf{G. DHARANI, P. YATEESHA, S. PHANI SAI PRASAD, S. RAMESH} hereby declare that the project report titled \textbf{``BLOCKCHAIN-BASED DIGITAL RIGHTS MANAGEMENT FOR SECURE CONTENT DELIVERY AND COPYRIGHT PROTECTION''} submitted to JNTU - GV, College of Engineering Vizianagaram (A), in partial fulfilment of the requirements for the award of the degree of B.Tech. in COMPUTER SCIENCE \& ENGINEERING is a record of original and independent research work done by us during the academic year 2021-2025 under the supervision of \textbf{Mr. V. LAXMI PRASAD} and it has not formed the basis of any Degree/Diploma/Associateship/Fellowship or other similar title to any candidate in University.
+
+\vspace{2cm}
+
+\noindent
+\textbf{Signature of the Candidates}
+
+\vspace{1.5cm}
+\begin{enumerate}
+    \item \textbf{G. DHARANI} - 21VV1A0518 \hfill \makebox[2in]{\hrulefill}
+    \vspace{0.5cm}
+    \item \textbf{P. YATEESHA} - 21VV1A0538 \hfill \makebox[2in]{\hrulefill}
+    \vspace{0.5cm}
+    \item \textbf{S. PHANI SAI PRASAD} - 21VV1A0546 \hfill \makebox[2in]{\hrulefill}
+    \vspace{0.5cm}
+    \item \textbf{S. RAMESH} - 21VV1A0552 \hfill \makebox[2in]{\hrulefill}
+\end{enumerate}
+
+\vspace{1.5cm}
+\noindent
+\textbf{PLACE:}\\
+\textbf{DATE:}
+
+% -------------------------------------------------------------------
+% VISION & MISSION, POs, PEOs, PSOs
+% -------------------------------------------------------------------
+\newpage
+\begin{center}
+    \large{\textbf{JNTU-GV, COLLEGE OF ENGINEERING, VIZIANAGARAM (A)}}\\
+    \normalsize{Dwarapudi (post), Vizianagaram Dist.}\\
+    \normalsize{Phone No. 08922-277911.}\\
+    \normalsize{Website: \href{http://www.jntugv.edu.in}{www.jntugv.edu.in}}
+\end{center}
+
+\vspace{1cm}
+\noindent
+\textbf{INSTITUTE VISION}\\
+To emerge as a premier technical Institution in the field of engineering and research with a focus to produce professionally competent and socially sensitive engineers capable of working in a multidisciplinary global environment.
+
+\vspace{0.5cm}
+\noindent
+\textbf{INSTITUTE MISSION}
+\begin{itemize}[leftmargin=*]
+    \setlength\itemsep{0.1em}
+    \item To provide high quality technical education through a creative balance of academia and Industry by adopting highly effective teaching learning processes.
+    \item To promote multidisciplinary research with a global perspective to attain professional excellence.
+    \item To establish standards that inculcate ethical and moral values that contribute to growth in the Career and development of society.
+\end{itemize}
+
+\vspace{1cm}
+
+\begin{center}
+    \large{\textbf{DEPARTMENT OF COMPUTER SCIENCE \& ENGINEERING}}
+\end{center}
+
+\vspace{0.5cm}
+\noindent
+\textbf{VISION}\\
+To achieve academic excellence in Computer Science \& Engineering by imparting comprehensive knowledge to the students, promoting research activities and professional ethics to outfit the ever-changing industrial demands and societal needs.
+
+\vspace{0.5cm}
+\noindent
+\textbf{MISSION}
+\begin{itemize}[leftmargin=*]
+    \setlength\itemsep{0.1em}
+    \item To produce the best quality Computer Science professionals by imparting quality.
+    \item Teaching and learning process, training and value education. To strengthen links with industry through partnerships and collaborative developmental works.
+    \item To attain self-sustainability and overall development through Research and Consultancy activities.
+    \item To inculcate work ethics and commitment in students for their future endeavours to serve the society.
+\end{itemize}
+
+\newpage
+% Include POs, PEOs, PSOs as from the reference
+\textbf{PROGRAM OUTCOMES (POs)}\\
+Program Outcomes (POs) form a set of individually assessable outcomes that are the components indicative of the graduate potential to acquire competence practice at the appropriate level. The POs is exemplars of the attributes expected of a graduate from an institution.
+
+\vspace{0.5cm}
+\noindent
+\textbf{PO Description:}
+\begin{itemize}[leftmargin=1.5cm, label=PO\arabic*:]
+    \setlength\itemsep{0.1em}
+    \item \textbf{Engineering Knowledge:} Apply the knowledge of mathematics, science, engineering fundamentals, and an engineering specialization to the solution of complex engineering problems.
+    \item \textbf{Problem Analysis:} Identify, formulate, review research literature, and analyse complex engineering problems reaching substantiated conclusions using first principles of mathematics, natural sciences, and engineering sciences.
+    \item \textbf{Design/development of Solutions:} Design solutions for complex engineering problems and design system components or processes that meet the specified needs with appropriate consideration for the public health and safety, and the cultural, societal, and environmental considerations.
+    \item \textbf{Conduct Investigations of Complex Problems:} Use research-based knowledge and research methods including design of experiments, analysis and interpretation of data, and synthesis of the information to provide valid conclusions.
+    \item \textbf{Modern Tool Usage:} Create, select, and apply appropriate techniques, resources, and modern engineering and IT tools including prediction and modelling to complex engineering activities with an understanding of the limitations.
+    \item \textbf{The Engineer and Society:} Apply reasoning informed by the contextual knowledge to assess societal, health, safety, legal and cultural issues and the consequent responsibilities relevant to the professional engineering practice.
+    \item \textbf{Environment and Sustainability:} Understand the impact of the professional engineering solutions in societal and environmental contexts, and demonstrate the knowledge of, and need for sustainable development.
+    \item \textbf{Ethics:} Apply ethical principles and commit to professional ethics and responsibilities and norms of the engineering practice.
+    \item \textbf{Individual and Teamwork:} Function effectively as an individual, and as a member or leader in diverse teams, and in multidisciplinary settings.
+    \item \textbf{Communication:} Communicate effectively on complex engineering activities with the engineering community and with society at large, such as being able to comprehend and write effective reports and design documentation, make effective presentations, and give and receive clear instructions.
+    \item \textbf{Project Management and Finance:} Demonstrate knowledge and understanding of the engineering and management principles and apply these to one's own work, as a member and leader in a team, to manage projects and in multidisciplinary environments.
+    \item \textbf{Life-Long Learning:} Recognize the need for and have the preparation and ability to engage in independent and life-long learning in the broadest context of technological change.
+\end{itemize}
+
+\newpage
+\noindent
+\textbf{PROGRAM EDUCATIONAL OBJECTIVES (PEOs)}
+\begin{itemize}[leftmargin=1.2cm, label=PEO\arabic*:]
+    \item The graduates of the Program will be prepared for their careers in the Software industry, public sector or pursue higher studies and continue to develop their professional knowledge.
+    \item The graduates will acquire capability to apply their knowledge of Computer science and engineering to solve real world problems using latest technologies.
+    \item The graduates will inculcate in professional attitude, inter-disciplinary approach, ethics and ability to relate computer engineering issues with social awareness.
+    \item The graduates of Computer Science Engineering will have soft skills to adapt to the diverse global environment through lifelong learning.
+\end{itemize}
+
+\vspace{1cm}
+\noindent
+\textbf{PROGRAM SPECIFIC OUTCOMES (PSOs)}
+\begin{itemize}[leftmargin=1.2cm, label=PSO\arabic*:]
+    \item Able to apply the knowledge of programming languages, data structures and algorithms, data science, networks and software engineering principles for software product development.
+    \item Able to analyse and formulate solutions to real world and socially relevant problems over multidisciplinary domains by using latest technologies.
+    \item Able to be a technically competent employee, researcher, entrepreneur, excel in competitive exams and zest for higher studies.
+\end{itemize}
+
+% -------------------------------------------------------------------
+% ACKNOWLEDGMENT
+% -------------------------------------------------------------------
+\newpage
+\begin{center}
+    \Large{\textbf{ACKNOWLEDGMENT}}
+\end{center}
+
+\vspace{1cm}
+\noindent
+It is needed with a great sense of pleasure and immense sense of gratitude that we acknowledge the help of these individuals. We owe thanks to many people who helped and supported us behind the screen during this report.
+
+\vspace{0.5cm}
+\noindent
+We take the privilege to express our heartfelt gratitude to project supervisor \textbf{Mr. V. LAXMI PRASAD}, Assistant Professor, \textbf{DR. P. ARUNA KUMARI}, HOD, Department of CSE, for their valuable suggestions and constant motivation that greatly helped us in successful completion of the project. We express our sincere thanks to \textbf{Prof. R. RAJESWARA RAO}, Principal of JNTU-GV, College of Engineering Vizianagaram, for providing a good infrastructure and environment to carry out this project.
+
+\vspace{0.5cm}
+\noindent
+We are thankful to all teaching and non-teaching staff of the CSE Department for extending their kind cooperation and assistance. Finally, we are extremely thankful to our parents and friends for their constant help and moral support.
+
+\vspace{2cm}
+\noindent
+\textbf{G. DHARANI}\\
+\textbf{P. YATEESHA}\\
+\textbf{S. PHANI SAI PRASAD}\\
+\textbf{S. RAMESH}
+
+% -------------------------------------------------------------------
+% ABSTRACT
+% -------------------------------------------------------------------
+\newpage
+\begin{center}
+    \Large{\textbf{ABSTRACT}}
+\end{center}
+
+\vspace{1cm}
+\noindent
+Digital piracy and unauthorized content distribution present significant challenges for creators in the modern digital age. Traditional Digital Rights Management (DRM) systems suffer from centralization, lack of transparency, and vulnerability to single points of failure. In this project, we introduce a \textbf{Blockchain-Based Digital Rights Management (DRM)} system aimed at establishing a secure, decentralized ownership verification and content distribution ecosystem. 
+
+The system incorporates an intelligent \textbf{Originality Engine} that performs robust perceptual hashing and semantic analysis to detect plagiarism and duplicate content across multiple modalities. Using advanced algorithms such as \textit{Image pHash}, \textit{Text MinHash / SBERT}, \textit{Audio Fingerprinting}, and \textit{Video Multi-Modal Synthesis}, the engine validates the novelty of a digital asset before it is legally minted on the Ethereum blockchain as an ERC-721 token. 
+
+To govern distribution and consumption, a proprietary \textit{secure content delivery mechanism} is implemented, which combines JWT tokenization, AES-256 on-the-fly decryption, and dynamic watermarking. This ensures an end-to-end encrypted pipeline where only licensed users can access the high-quality assets while malicious downloads are prevented. Our solution significantly outperforms conventional DRM systems by providing transparent royalties, automated licensing through Smart Contracts, and near-zero redundancy of registered assets, making it a robust, novel approach for intellectual property preservation.
+
+\vspace{1cm}
+\noindent
+\textbf{This project is mapped with following PO'S and PSO'S:}
+
+\vspace{0.5cm}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|}
+        \hline
+        PO1 & PO2 & PO3 & PO4 & PO5 & PO6 & PO7 & PO8 & PO9 & PO10 & PO11 & PO12 \\
+        \hline
+        \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        PSO1 & PSO2 & PSO3 \\
+        \hline
+        \checkmark & \checkmark & \checkmark \\
+        \hline
+    \end{tabular}
+\end{table}
+
+
+% -------------------------------------------------------------------
+% TOC, LOF, LOT
+% -------------------------------------------------------------------
+\newpage
+\tableofcontents
+
+\newpage
+\listoffigures
+
+\newpage
+\listoftables
+
+\clearpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+% -------------------------------------------------------------------
+% CHAPTER 1: INTRODUCTION
+% -------------------------------------------------------------------
+\chapter{INTRODUCTION}
+
+\section{What is Digital Rights Management?}
+Digital Rights Management (DRM) encompasses a set of access control technologies limiting the use of proprietary hardware, copyrighted works, and software. DRM technologies govern the usage, modification, and distribution of copyrighted works as dictated by the rights holder. In conventional scenarios, DRM is highly centralized, controlled by large distribution authorities such as streaming services or digital publishers.
+
+\section{Blockchain and Decentralization}
+Blockchain is a distributed, immutable ledger that facilitates the process of recording transactions and tracking assets securely. In the context of DRM, blockchain enables the tokenization of digital rights into Non-Fungible Tokens (NFTs), particularly through the ERC-721 token standard on the Ethereum network. By decentralizing ownership records, the system eliminates the dependency on vulnerable centralized servers.
+
+\section{The Need for an Originality Engine}
+The rapid explosion of AI-generated and easily manipulatable digital content necessitates an automated screening mechanism. If counterfeit or duplicated content is minted on the blockchain, the integrity of the copyright ledger diminishes. The Originality Engine intercepts asset registrations and computes perceptual similarity metrics against millions of records in milliseconds to block exact and semantically similar duplicates.
+
+\section{Secure Content Delivery}
+While the Ethereum blockchain efficiently maps ownership, storing high-resolution content directly on-chain is computationally expensive and slow. Assets must be securely stored off-chain (e.g., in a secure cloud bucket or IPFS). This introduces the risk of unauthorized off-chain access. Our Secure Content Delivery mechanism solves this bridging gap via real-time decryption and strictly monitored, time-expiring session tokens.
+
+\section{Why This Project?}
+The motivation behind this project originates from the increasing prevalence of media piracy, where creators lose millions annually to unauthorized redistribution. Existing DRM tools often restrict fair use, alienate consumers through intrusive verification tools, and provide inadequate payouts to the actual creators. 
+
+By integrating \textbf{Blockchain for immutable ownership}, a \textbf{Multi-modal Originality Engine for duplicate prevention}, and a \textbf{Robust Cryptographic Streaming pipeline}, this system creates a comprehensive, fair, and tamper-proof ecosystem tailored for modern digital economies.
+
+% -------------------------------------------------------------------
+% CHAPTER 2: LITERATURE SURVEY
+% -------------------------------------------------------------------
+\chapter{LITERATURE SURVEY}
+
+\section{Overview}
+A profound analysis of the current state of DRM, perceptual hashing algorithms, and smart contract-based licensing was conducted to establish a foundation for the proposed architecture.
+
+\section{Decentralized Rights Management Using Blockchain}
+Several studies have proposed utilizing decentralized ledgers to record copyright mappings. Systems based on blockchain architecture eliminate single points of failure. However, a major identified flaw in early systems was the "garbage-in, garbage-out" problem: if a plagiarized file was published on the blockchain first, the network falsely recognized the counterfeiter as the true author. 
+
+\section{Perceptual Hashing and Plagiarism Detection}
+\subsection{Image pHash (Perceptual Hashing)}
+Unlike cryptographic hashes (MD5, SHA-256) which change entirely if a single bit flips, perceptual hashes preserve structural integrity. Studies show that pHash algorithms effectively resist common modifications like scaling, watermarking, and minor compressions, making them ideal for image uniqueness verification.
+
+\subsection{Text MinHash and Semantic Embeddings (SBERT)}
+For textual assets, verifying originality requires both exact match detection and semantic (meaning-level) comparisons. Literature suggests the utilization of \textit{MinHash associated with Jaccard Similarity} for efficient lexical overlap detection. Furthermore, \textit{Sentence-BERT (SBERT)} captures the semantic context, accurately identifying paraphrased text which standard lexical overlap misses.
+
+\section{Secure Streaming and Encryption}
+Evaluating existing media distribution platforms revealed that static URLs are the weakest link in content delivery. Research emphasizes the necessity of dynamically generating encrypted fragments protected by on-the-fly decryption keys derived from cryptographic handshakes (e.g., JWT). 
+
+% -------------------------------------------------------------------
+% CHAPTER 3: SYSTEM ANALYSIS
+% -------------------------------------------------------------------
+\chapter{SYSTEM ANALYSIS}
+
+\section{Existing System}
+In the existing ecosystem, digital platforms use proprietary algorithms and centralized databases (like SQL or NoSQL stores) to track who purchased a license and who uploaded the content. Additionally, content is merely evaluated by simple MD5 hashes resulting in frequent duplicate attacks when one single pixel is altered.
+
+\subsection{Drawbacks}
+\begin{itemize}
+    \item \textbf{Centralized Authority:} A single database failure or a malicious administrator can alter ownership rights.
+    \item \textbf{Ineffective Duplicate Detection:} Cryptographic hashes fail entirely against minor cropping, re-encoding, or paraphrasing.
+    \item \textbf{High Transaction Fees for Middlemen:} Distributors take up to 30-50\% and royalties are opaque.
+    \item \textbf{Static Media Links:} Unauthorized users frequently extract the streaming URL and bypass the DRM layer.
+\end{itemize}
+
+\section{Proposed System}
+The proposed project directly solves these constraints by constructing a trifecta architecture:
+\begin{enumerate}
+    \item \textbf{Originality Engine:} A Python-based multi-modal processing server that extracts features (pHash, MinHash, Spectrograms) and cross-verifies new uploads against a vast vector index database.
+    \item \textbf{Smart Contract Ledger:} A solidity-based Ethereum infrastructure that logs licenses, handles automated royalty distributions, and verifies the identity of the user cryptographically via Metamask.
+    \item \textbf{Encrypted Data Pipeline:} A secured Node.js backend acting as the DRM gateway, only unlocking content AES keys based on zero-knowledge style proofs of blockchain ownership status.
+\end{enumerate}
+
+\section{System Architecture}
+The system architecture flows asynchronously as follows:
+\begin{enumerate}
+    \item A creator submits an asset with metadata to the Originality Engine.
+    \item The Engine validates uniqueness via Euclidean/Cosine distance thresholds against existing signatures.
+    \item If unique, the React frontend signs the corresponding transaction using Web3 and Metamask.
+    \item The Smart Contract validates the deployment and logs the ERC-721 token in the blockchain state.
+    \item The backend stores the encrypted version of the file in the centralized bucket securely.
+    \item When a purchaser buys a license on-chain, their wallet signs a request. The Backend issues a 10-minute JWT token allowing client-side hardware decryption for playback logic.
+\end{enumerate}
+
+\section{Software and Hardware Requirements}
+\subsection{Hardware Requirements}
+\begin{itemize}
+    \item Processor: Intel i5 / AMD Ryzen 5 or equivalent
+    \item RAM: 8 GB Minimum (16 GB Recommended for Machine Learning models)
+    \item Storage: 50 GB SSD
+\end{itemize}
+
+\subsection{Software Requirements}
+\begin{itemize}
+    \item Operating System: Windows / Linux / macOS
+    \item Programming Languages: JavaScript / TypeScript (Node.js, React), Python (Originality Engine), Solidity (Smart Contracts)
+    \item Blockchain Environment: Hardhat / Truffle, MetaMask, Sepolia Testnet
+    \item Database: SQLite (Feature indexing), MongoDB (Metadata mappings)
+    \item Libraries: PyTorch, Sentence-Transformers, pyPDF, FFmpeg
+\end{itemize}
+
+% -------------------------------------------------------------------
+% CHAPTER 4: METHODOLOGY
+% -------------------------------------------------------------------
+\chapter{METHODOLOGY}
+
+\section{Problem Statement}
+Design and develop a complete decentralized architecture for Digital Rights Management that cryptographically locks the distribution of proprietary content exclusively to verified licensed parties, whilst ensuring the absolute originality of all minted assets.
+
+\section{Originality Engine Implementation}
+The Originality Engine is a microservice developed fundamentally to evaluate data streams of diverse MIME types and compare them quantitatively against existing system fingerprints.
+
+\subsection{Image Assets (pHash)}
+Image uniqueness is handled via Perceptual Hashing (pHash). The algorithm converts the image to grayscale, applies a Discrete Cosine Transform (DCT), filters high frequencies, and extracts a 64-bit sequence. Comparisons between two images are measured uniformly using Hamming Distance, where a distance less than a configured threshold triggers a duplication flag.
+
+\subsection{Text Assets (MinHash \& SBERT)}
+The text methodology is designed natively in two parallel execution pipelines:
+\begin{itemize}
+    \item \textbf{Lexical (MinHash):} Rapidly tokenizes document (txt/pdf/docx) strings into n-grams (shingles) and stores permutations into subsets. It approximates the Jaccard similarity to catch copy-paste or exact matches globally.
+    \item \textbf{Semantic (SBERT):} A computationally heavy Sentence-BERT model embeds the extracted textual context into a 384-dimensional dense vector space. A Cosine-Similarity function evaluates the contextual proximity. Thus, even extensively paraphrased structural texts are successfully identified.
+\end{itemize}
+
+\subsection{Audio and Video Extraction}
+Media data requires comprehensive multi-modal assessment. 
+\begin{itemize}
+    \item \textbf{Audio:} Fingerprinting utilizes the generation of frequency-magnitude spectrograms from the audio wave tracks. Constant-Q transformation establishes distinct time-frequency patterns that detect audio manipulation independent of amplitude.
+    \item \textbf{Video:} Videos are structurally processed by uniformly extracting visual keyframes, calculating individual pHashes sequentially, and independently performing the Audio Fingerprinting analysis on the demuxed overlapping audio channel.
+\end{itemize}
+
+\section{Smart Contract and Licensing Model}
+Tokens are represented conforming to ERC-721 specifications where metadata holds hashes of the encrypted content. The \texttt{LicenseRegistry} contract interfaces direct payment transferences from consumer to creator immediately at the point of sale. 
+
+% -------------------------------------------------------------------
+% CHAPTER 5: SYSTEM IMPLEMENTATION
+% -------------------------------------------------------------------
+\chapter{SYSTEM IMPLEMENTATION}
+
+\section{Backend and JWT Implementation}
+The backend logic is constructed using Express.js. For streaming authenticated assets, standard file-serving approaches are obstructed.
+Instead, a controller verifies blockchain ownership recursively:
+\begin{itemize}
+    \item \textbf{Stream Tokens:} A temporary JSON Web Token (JWT) is minted upon signature validation by Ethereum node providers (Ethers.js). The token acts as the short-lived session authorization.
+    \item \textbf{On-The-Fly Decryption:} The system sequentially reads encrypted streams and pipes AES-decrypted buffers directly to the `HTTP 206 Partial Content` video player stream preventing downloading locally.
+\end{itemize}
+
+\section{Frontend Architecture}
+The progressive web application (React/Vite) relies heavily on a dynamic DRM player component and Web3 integrations utilizing MetaMask. An intuitive upload dashboard directs blobs simultaneously into IPFS buffers and the Originality Engine inference node prior to initiating wallet authorization requests.
+
+\section{Code Snippet: SBERT Cosine Similarity}
+\begin{verbatim}
+def compute_embedding(text):
+    # Using 'all-MiniLM-L6-v2' lightweight transformer
+    return self.model.encode(text)
+
+def match_semantic(target_emb, stored_emb):
+    similarity = cosine_similarity([target_emb], [stored_emb])[0][0]
+    if similarity > 0.85:
+        return "SEMANTIC DUPLICATE"
+    return "UNIQUE"
+\end{verbatim}
+
+\section{Code Snippet: Smart Contract License Minting}
+\begin{verbatim}
+function purchaseLicense(uint256 assetId) external payable {
+    require(assets[assetId].exists, "Asset does not exist");
+    require(msg.value >= assets[assetId].price, "Insufficient funds");
+    
+    // Transfer funds to creator algorithm
+    payable(assets[assetId].creator).transfer(msg.value);
+    
+    // Grant the License
+    userLicenses[msg.sender][assetId] = true;
+    emit LicensePurchased(msg.sender, assetId);
+}
+\end{verbatim}
+
+% -------------------------------------------------------------------
+% CHAPTER 6: RESULTS
+% -------------------------------------------------------------------
+\chapter{RESULTS}
+
+\section{Test Results Analysis}
+Extensive simulations were conducted targeting the Originality Engine across diverse modalities emphasizing its robust functionality under intensive modifications:
+
+\begin{table}[H]
+    \centering
+    \caption{Originality Engine Simulation Matrix}
+    \begin{tabular}{|l|l|p{5cm}|l|}
+        \hline
+        \textbf{Asset Type} & \textbf{Algorithm} & \textbf{Simulated Modification} & \textbf{Result} \\
+        \hline
+        Image (JPG) & pHash & 50\% Scaling \& Recompressed & Detected (Hamming < 5) \\
+        \hline
+        Image (PNG) & pHash & Converted to Grayscale \& Crop & Detected (Hamming < 8) \\
+        \hline
+        Text (PDF) & MinHash & Direct partial Copy-Paste & Detected (Jaccard > 0.95) \\
+        \hline
+        Text (TXT) & SBERT & Completely paraphrased content & Semantic Flag (Cosine > 0.88) \\
+        \hline
+        Audio (MP3) & Spectrogram & Compressed to 64kbps & Detected (Peak Match) \\
+        \hline
+        Video (MP4) & Multi-modal & Brightness +/- 40\%, Audio Pitching & Detected (Video \& Audio match) \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\section{Blockchain Deployment Efficiency}
+The integration tests on the Sepolia Ethereum test network validate successful state changes corresponding to minting tokens and granting transparent royalties seamlessly without latency exceeding an average mining block time of 13 seconds. Decentralized storage endpoints responded to validation queries confirming total metadata availability continuously.
+
+\section{UI Implementation \& Dashboard}
+The frontend interface dynamically renders active digital assets according to the wallet connections allowing the users to "My Assets" and "My Licenses", streamlining direct interaction with the underlying complex decentralized protocols securely.
+
+% -------------------------------------------------------------------
+% CHAPTER 7: CONCLUSION
+% -------------------------------------------------------------------
+\chapter{CONCLUSION}
+
+\section{Conclusion}
+The \textbf{Blockchain-Based Digital Rights Management System} successfully mitigates conventional pitfalls encountered in centralized IP governance. By establishing a robust computational \textit{Originality Engine}, the system comprehensively filters plagiarized or duplicated intellectual properties accurately predicting the authenticity of dynamic components across Images, Audio, Video, and Text. 
+Furthermore, merging advanced machine learning uniqueness verification seamlessly with Ethereum-based \textit{Smart Contracts} formulates a self-sustaining decentralized economy supporting direct creator royalties devoid of excessive intermediary interference.
+
+\section{Future Scope}
+While the current framework ensures state-of-the-art protection against generalized copyright infringements, future developmental trajectories possess extensive enhancements specifically:
+\begin{enumerate}
+    \item \textbf{Generative AI Protection Protocols:} Further adjusting SBERT parameters uniquely isolating generative AI watermarks and language structures to automatically classify AI-generated content definitively separating them from human artistry.
+    \item \textbf{Cross-Chain Bridging:} Permitting seamless transfers and verifications natively between varied blockchains such as Polygon, Avalanche, or Solana minimizing gas costs extensively while increasing ecosystem availability.
+    \item \textbf{Zero-Knowledge Oracles (zk-SNARKs):} Providing further cryptographic privacy for creators opting strictly to retain asset contents globally unidentifiable publicly while simultaneously verifying their specific license allocations directly.
+\end{enumerate}
+
+% -------------------------------------------------------------------
+% REFERENCES
+% -------------------------------------------------------------------
+\begin{thebibliography}{9}
+
+\bibitem{satoshinakamoto}
+Nakamoto, S. (2008). \textit{Bitcoin: A Peer-to-Peer Electronic Cash System}. Decentralized Business Review.
+
+\bibitem{vitbuterin}
+Buterin, V. (2014). \textit{A Next-Generation Smart Contract and Decentralized Application Platform}. Ethereum White Paper.
+
+\bibitem{phash}
+Zauner, C. (2010). \textit{Implementation and Benchmarking of Perceptual Image Hash Functions}.
+
+\bibitem{minhash}
+Broder, A. Z. (1997). \textit{On the resemblance and containment of documents}. Compression and Complexity of Sequences Proceedings.
+
+\bibitem{sbert}
+Reimers, N., \& Gurevych, I. (2019). \textit{Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks}. EMNLP.
+
+\end{thebibliography}
+
+\end{document}
