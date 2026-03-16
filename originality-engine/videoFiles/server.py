@@ -48,9 +48,12 @@ def check_video():
         filename = f"temp_video_{file.filename}"
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         try:
+            print(f"[{request.method}] /check - Received file: {filename}")
             file.save(filepath)
             
+            print(f"Starting originality check for {filename}...")
             result = engine.check_originality(filepath)
+            print(f"Finished originality check for {filename}. Result: {result.get('status')}")
             
             # Cleanup
             if os.path.exists(filepath): os.remove(filepath)

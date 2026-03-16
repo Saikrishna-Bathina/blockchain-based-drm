@@ -44,8 +44,10 @@ class VideoOriginalityRequest:
         duration = clip.duration
         frame_paths = []
         try:
-            # Limit frames to avoid spamming the image server (e.g. max 10 frames)
-            step = max(5, int(duration / 10)) 
+            # Limit frames to avoid spamming the image server
+            # INCREASED STEP: Less frames will reduce processing time for 4K video rendering.
+            step = max(10, int(duration / 5)) 
+            print(f"Video duration: {duration}s. Extracting frames every {step}s.")
             for t in range(0, int(duration), step):
                 frame_path = os.path.join(self.temp_dir, f"frame_{t}.jpg")
                 clip.save_frame(frame_path, t)
@@ -69,9 +71,11 @@ class VideoOriginalityRequest:
             
             if audio_path and os.path.exists(audio_path):
                 try:
+                    print(f"Sending audio to: {AUDIO_SERVER_URL}")
                     with open(audio_path, 'rb') as f:
-                        resp = requests.post(AUDIO_SERVER_URL, files={'file': f})
+                        resp = requests.post(AUDIO_SERVER_URL, files={'file': f}, timeout=60)
                     
+                    print(f"Audio server responded with: {resp.status_code}")
                     if resp.status_code == 200:
                         data = resp.json()
                         # Audio server returns { "status": "ORIGINAL/DUPLICATE", "top_score": float, "matches": [] }
@@ -88,10 +92,11 @@ class VideoOriginalityRequest:
             visual_results = []
             max_visual_score = 0.0
             
-            for fp in frame_paths:
+            for i, fp in enumerate(frame_paths):
                 try:
+                    print(f"Sending frame {i+1}/{len(frame_paths)} to image server...")
                     with open(fp, 'rb') as f:
-                        resp = requests.post(IMAGE_SERVER_URL, files={'file': f})
+                        resp = requests.post(IMAGE_SERVER_URL, files={'file': f}, timeout=30)
                     
                     if resp.status_code == 200:
                         data = resp.json()
