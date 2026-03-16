@@ -18,6 +18,7 @@ import { Card, CardContent } from "../components/ui/Card"
 import { cn } from "../lib/utils"
 import api from "../lib/api"
 import { useAuth } from "../context/AuthContext"
+import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
 
 // --- Components ---
@@ -117,6 +118,7 @@ const ActivityCard = ({ item }) => {
 
 const Dashboard = () => {
     const { user } = useAuth()
+    const navigate = useNavigate()
     const [stats, setStats] = useState({
         total: 0,
         original: 0,
@@ -172,7 +174,10 @@ const Dashboard = () => {
             <button className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-xs font-medium text-white transition-colors">
                 Last 30 Days
             </button>
-             <button className="px-3 py-1.5 bg-brand-primary hover:bg-brand-primary/90 rounded-lg text-xs font-bold text-white shadow-lg shadow-brand-primary/20 transition-all">
+             <button 
+                onClick={() => navigate('/dashboard/analytics')}
+                className="px-3 py-1.5 bg-brand-primary hover:bg-brand-primary/90 rounded-lg text-xs font-bold text-white shadow-lg shadow-brand-primary/20 transition-all"
+             >
                 Generate Report
             </button>
         </div>
@@ -236,7 +241,10 @@ const Dashboard = () => {
           <div className="space-y-6">
              <h3 className="text-xl font-bold text-white">Quick Actions</h3>
              <div className="bg-brand-surface/30 border border-white/5 rounded-3xl p-6 space-y-4">
-                <button className="w-full p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center justify-between group transition-all">
+                <button 
+                    onClick={() => navigate('/dashboard/analytics')}
+                    className="w-full p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 flex items-center justify-between group transition-all"
+                >
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-blue-500/20 text-blue-400">
                              <TrendingUp className="w-5 h-5" />
