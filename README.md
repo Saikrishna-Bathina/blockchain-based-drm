@@ -1,6 +1,6 @@
 # Blockchain-Based Digital Rights Management (DRM)
 
-> A full-stack, decentralized Digital Rights Management platform designed to protect intellectual property, prevent unauthorized distribution, and automate content licensing using multimodal originality verification, Ethereum smart contracts, and IPFS.
+> A full-stack, decentralized Digital Rights Management platform designed to protect the intellectual property, prevent unauthorized distribution, and automate content licensing using multimodal originality verification, Ethereum smart contracts, and IPFS.
 
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?logo=solidity)](https://soliditylang.org/)
 [![Ethereum Sepolia](https://img.shields.io/badge/Network-Ethereum%20Sepolia-627EEA?logo=ethereum)](https://sepolia.etherscan.io/)
