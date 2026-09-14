@@ -30,7 +30,6 @@
 14. [Deployment Configuration](#deployment-configuration)
 15. [Visual Walkthrough & Screenshots](#visual-walkthrough--screenshots)
 16. [Future Improvements](#future-improvements)
-17. [Authors & Acknowledgments](#authors--acknowledgments)
 
 ---
 
@@ -697,24 +696,3 @@ The platform end-to-end user workflow captured during live testing on the Ethere
 * **Layer-2 Rollup Migration (Arbitrum / Base)**: Deploy licensing contracts onto an Ethereum Layer 2 network to reduce gas fees for micro-licensing transactions (e.g., single-playback licenses).
 * **Decentralized Streaming Nodes**: Transition backend streaming proxy to decentralized video delivery networks (such as Livepeer or Filecoin Saturn) to eliminate centralized bandwidth bottlenecks.
 * **Automated Dispute Resolution DAO**: Implement an on-chain arbitration protocol for copyright dispute resolution where staked validators audit flagged near-duplicate content.
-
----
-
-## Authors & Acknowledgments
-
-Developed as a Final-Year Capstone Project for the award of the Degree of **Bachelor of Technology in Computer Science & Engineering** (2021–2025) at **JNTU-GV College of Engineering, Vizianagaram (A)**.
-
-### Project Team
-
-* **G. Dharani** (21VV1A0518)
-* **P. Yateesha** (21VV1A0538)
-* **S. Phani Sai Prasad** (21VV1A0546)
-* **S. Ramesh** (21VV1A0552)
-
-### Project Lead & Maintainer
-
-* **Saikrishna Bathina** — [GitHub Profile](https://github.com/Saikrishna-Bathina)
-
-### Under the Guidance of
-
-* **Mr. V. Laxmi Prasad (C)**, Assistant Professor, Department of Computer Science & Engineering, JNTU-GV, CEV (A).
